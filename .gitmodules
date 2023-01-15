@@ -1,0 +1,9 @@
+[submodule "output/fonts/Leland"]
+	path = output/fonts/Leland
+	url = https://github.com/MuseScoreFonts/Leland.git
+[submodule "output/fonts/bravura"]
+	path = output/fonts/bravura
+	url = https://github.com/steinbergmedia/bravura.git
+[submodule "output/fonts/smufl"]
+	path = output/fonts/smufl
+	url = https://github.com/w3c/smufl.git
