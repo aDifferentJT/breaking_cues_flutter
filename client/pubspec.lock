@@ -121,6 +121,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  fonts:
+    dependency: transitive
+    description:
+      path: "../fonts"
+      relative: true
+    source: path
+    version: "0.0.1"
   intersperse:
     dependency: transitive
     description:

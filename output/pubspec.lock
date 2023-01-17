@@ -88,6 +88,13 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
+  fonts:
+    dependency: "direct main"
+    description:
+      path: "../fonts"
+      relative: true
+    source: path
+    version: "0.0.1"
   intersperse:
     dependency: "direct main"
     description:

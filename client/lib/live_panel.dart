@@ -12,11 +12,13 @@ import 'deck_panel.dart';
 import 'docked_preview.dart';
 
 class LivePanel extends StatefulWidget {
+  final StreamSink<void> requestUpdateStreamSink;
   final Stream<Message> stream;
   final StreamSink<Message> streamSink;
 
   const LivePanel({
     super.key,
+    required this.requestUpdateStreamSink,
     required this.stream,
     required this.streamSink,
   });
@@ -69,22 +71,22 @@ class LivePanelState extends State<LivePanel> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      return Column(
-        children: [
-          Text(
-            deckIndex?.deck.label ?? "Live",
-            style: Theme.of(context).primaryTextTheme.headlineSmall,
-          )
-              .sized(
-                width: double.infinity,
-              )
-              .container(
-                padding: const EdgeInsets.all(20),
-                color: CupertinoColors.darkBackgroundGray,
-              ),
-          Row(children: [
-            Column(children: [
+    return Column(
+      children: [
+        Text(
+          deckIndex?.deck.label ?? "Live",
+          style: Theme.of(context).primaryTextTheme.headlineSmall,
+        )
+            .sized(
+              width: double.infinity,
+            )
+            .container(
+              padding: const EdgeInsets.all(20),
+              color: CupertinoColors.darkBackgroundGray,
+            ),
+        Row(children: [
+          LayoutBuilder(builder: (context, constraints) {
+            return Column(children: [
               (deckIndex == null
                       ? const Text("Nothing Live")
                           .centered()
@@ -96,24 +98,23 @@ class LivePanelState extends State<LivePanel> {
                         ))
                   .expanded(),
               DockedPreview(
+                requestUpdateStreamSink: widget.requestUpdateStreamSink,
                 stream: widget.stream,
                 defaultSettings: defaultSettings,
-              ).constrained(
-                BoxConstraints(maxHeight: constraints.maxHeight / 3),
+              ).constrained(constraints),
+            ]);
+          }).expanded(),
+          const Icon(Icons.close, color: Colors.black)
+              .centered()
+              .container(
+                color: const Color.fromARGB(255, 255, 0, 0),
+                width: 40,
+              )
+              .gestureDetector(
+                onTap: () => widget.streamSink.add(CloseMessage()),
               ),
-            ]).expanded(),
-            const Icon(Icons.close, color: Colors.black)
-                .centered()
-                .container(
-                  color: const Color.fromARGB(255, 255, 0, 0),
-                  width: 40,
-                )
-                .gestureDetector(
-                  onTap: () => widget.streamSink.add(CloseMessage()),
-                ),
-          ]).expanded(),
-        ],
-      );
-    });
+        ]).expanded(),
+      ],
+    );
   }
 }

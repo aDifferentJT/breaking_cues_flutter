@@ -12,6 +12,8 @@ import 'package:flutter_utils/widget_modifiers.dart';
 import 'button.dart';
 import 'deck_panel.dart';
 import 'docked_preview.dart';
+import 'left_tabs.dart';
+import 'settings_controls.dart';
 import 'suggestor.dart';
 
 class GoLiveButtons extends StatelessWidget {
@@ -134,7 +136,7 @@ class SearchOverlayState extends State<SearchOverlay> {
 }
 
 class PreviewPanel extends StatefulWidget {
-  final StreamSink<void> requestUpdateStream;
+  final StreamSink<void> requestUpdateStreamSink;
   final Stream<Programme> updateStream;
   final StreamSink<Programme> updateStreamSink;
   final Stream<DeckKey?> previewStream;
@@ -142,7 +144,7 @@ class PreviewPanel extends StatefulWidget {
 
   const PreviewPanel({
     super.key,
-    required this.requestUpdateStream,
+    required this.requestUpdateStreamSink,
     required this.updateStream,
     required this.updateStreamSink,
     required this.previewStream,
@@ -166,7 +168,11 @@ class PreviewPanelState extends State<PreviewPanel>
   late StreamSubscription<DeckKey?> _previewStreamSubscription;
 
   final outputStream = StreamController<Message>.broadcast();
+  Message lastMessage = CloseMessage();
   late final StreamSubscription<Message> _outputStreamSubscription;
+
+  final requestPreviewUpdateStream = StreamController<void>();
+  late final StreamSubscription<void> _requestPreviewUpdateStreamSubscription;
 
   void processUpdate(Programme newProgramme) {
     setState(() => programme = newProgramme);
@@ -203,6 +209,7 @@ class PreviewPanelState extends State<PreviewPanel>
   }
 
   void processOutput(Message message) {
+    lastMessage = message;
     if (message is ShowMessage) {
       setState(() => deckIndex = message.deckIndex);
     } else if (message is CloseMessage) {
@@ -229,8 +236,10 @@ class PreviewPanelState extends State<PreviewPanel>
     _updateStreamSubscription = widget.updateStream.listen(processUpdate);
     _previewStreamSubscription = widget.previewStream.listen(processPreview);
     _outputStreamSubscription = outputStream.stream.listen(processOutput);
+    _requestPreviewUpdateStreamSubscription = requestPreviewUpdateStream.stream
+        .listen((_) => outputStream.add(lastMessage));
 
-    widget.requestUpdateStream.add(() {}());
+    widget.requestUpdateStreamSink.add(null);
   }
 
   @override
@@ -257,100 +266,124 @@ class PreviewPanelState extends State<PreviewPanel>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Stack(children: [
-          Column(
+    return Stack(children: [
+      Column(
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  (editing
-                      ? TextFormField(
-                          initialValue: deckIndex?.deck.comment ?? "",
-                          decoration: InputDecoration.collapsed(
-                            hintText: deckIndex?.deck.label ?? "",
-                          ),
-                          style:
-                              Theme.of(context).primaryTextTheme.headlineSmall,
-                          onChanged: (comment) {
-                            if (deckIndex != null) {
-                              updateDeck(
-                                deckIndex!.deck.withComment(comment),
-                              );
-                            }
-                          },
-                        ).expanded()
-                      : Text(
-                          deckIndex?.deck.label ?? "Preview",
-                          style:
-                              Theme.of(context).primaryTextTheme.headlineSmall,
-                        ).expanded()),
-                  Button(
-                    onTap: () => setState(() => searching = true),
-                    child: const Icon(
-                      CupertinoIcons.search,
-                      color: CupertinoColors.activeBlue,
-                    ),
-                  ).padding(const EdgeInsets.symmetric(horizontal: 4)),
-                  Button(
-                    onTap: () => setState(() => editing = !editing),
-                    depressed: editing,
-                    child: Icon(
-                      CupertinoIcons.pencil,
-                      color: editing
-                          ? CupertinoColors.darkBackgroundGray
-                          : CupertinoColors.activeBlue,
-                    ),
-                  ).padding(const EdgeInsets.symmetric(horizontal: 4)),
-                ],
-              ).container(
-                padding: const EdgeInsets.all(20),
-                color: CupertinoColors.darkBackgroundGray,
-              ),
-              Row(children: [
-                Column(children: [
-                  (deckIndex == null
-                          ? const Text("Nothing Selected")
-                              .centered()
-                              .background(Colors.black)
-                          : ConditionalEditingDeckPanel(
-                              stream: outputStream.sink,
-                              defaultSettings: programme.defaultSettings,
-                              deckIndex: deckIndex!,
-                              editing: editing,
-                              onChange: updateDeck,
-                            ))
-                      .expanded(),
-                  DockedPreview(
-                    stream: outputStream.stream,
-                    defaultSettings: programme.defaultSettings,
-                    deck: deckIndex?.deck,
-                    updateDeck: updateDeck,
-                  ).constrained(
-                    BoxConstraints(
-                      maxHeight: constraints.maxHeight / 3,
-                    ),
-                  ),
-                ]).expanded(),
-                GoLiveButtons(
-                  goLive: ({required quiet}) {
-                    if (deckIndex != null) {
-                      widget.liveStreamSink.add(ShowMessage(
-                        defaultSettings: programme.defaultSettings,
-                        quiet: quiet,
-                        deckIndex: deckIndex!,
-                      ));
-                    }
-                  },
+              (editing
+                  ? TextFormField(
+                      initialValue: deckIndex?.deck.comment ?? "",
+                      decoration: InputDecoration.collapsed(
+                        hintText: deckIndex?.deck.label ?? "",
+                      ),
+                      style: Theme.of(context).primaryTextTheme.headlineSmall,
+                      onChanged: (comment) {
+                        if (deckIndex != null) {
+                          updateDeck(
+                            deckIndex!.deck.withComment(comment),
+                          );
+                        }
+                      },
+                    ).expanded()
+                  : Text(
+                      deckIndex?.deck.label ?? "Preview",
+                      style: Theme.of(context).primaryTextTheme.headlineSmall,
+                    ).expanded()),
+              Button(
+                onTap: () => setState(() => searching = true),
+                child: const Icon(
+                  CupertinoIcons.search,
+                  color: CupertinoColors.activeBlue,
                 ),
-              ]).expanded(),
+              ).padding(const EdgeInsets.symmetric(horizontal: 4)),
+              Button(
+                onTap: () => setState(() => editing = !editing),
+                depressed: editing,
+                child: Icon(
+                  CupertinoIcons.pencil,
+                  color: editing
+                      ? CupertinoColors.darkBackgroundGray
+                      : CupertinoColors.activeBlue,
+                ),
+              ).padding(const EdgeInsets.symmetric(horizontal: 4)),
             ],
+          ).container(
+            padding: const EdgeInsets.all(20),
+            color: CupertinoColors.darkBackgroundGray,
           ),
-          searching
-              ? SearchOverlay(dismiss: () => setState(() => searching = false))
-              : const SizedBox.shrink(),
-        ]);
-      },
-    );
+          Row(children: [
+            LayoutBuilder(builder: (context, constraints) {
+              return Column(children: [
+                (deckIndex == null
+                        ? const Text("Nothing Selected")
+                            .centered()
+                            .background(Colors.black)
+                        : LeftTabs(
+                            keepHiddenChildrenAlive: true,
+                            children: [
+                              TabEntry(
+                                icon: const Text("Preview")
+                                    .rotated(quarterTurns: 1),
+                                body: ConditionalEditingDeckPanel(
+                                  stream: outputStream.sink,
+                                  defaultSettings: programme.defaultSettings,
+                                  deckIndex: deckIndex!,
+                                  editing: editing,
+                                  onChange: updateDeck,
+                                ),
+                              ),
+                              TabEntry(
+                                icon: const Text("Settings")
+                                    .rotated(quarterTurns: 1),
+                                body: OptionalDisplaySettingsPanel(
+                                  displaySettings: deckIndex!
+                                      .deck.displaySettings
+                                      .rebuild((builder) {
+                                    for (final name
+                                        in programme.defaultSettings.keys) {
+                                      builder.putIfAbsent(
+                                        name,
+                                        () => const OptionalDisplaySettings(),
+                                      );
+                                    }
+                                  }),
+                                  update: (settings) => updateDeck(
+                                    deckIndex!.deck
+                                        .withDisplaySettings(settings),
+                                  ),
+                                  defaultSettings: programme.defaultSettings,
+                                ).background(Colors.black),
+                              ),
+                            ],
+                          ))
+                    .expanded(),
+                DockedPreview(
+                  requestUpdateStreamSink: requestPreviewUpdateStream.sink,
+                  stream: outputStream.stream,
+                  defaultSettings: programme.defaultSettings,
+                  deck: deckIndex?.deck,
+                  updateDeck: updateDeck,
+                ).constrained(constraints),
+              ]);
+            }).expanded(),
+            GoLiveButtons(
+              goLive: ({required quiet}) {
+                if (deckIndex != null) {
+                  widget.liveStreamSink.add(ShowMessage(
+                    defaultSettings: programme.defaultSettings,
+                    quiet: quiet,
+                    deckIndex: deckIndex!,
+                  ));
+                }
+              },
+            ),
+          ]).expanded(),
+        ],
+      ),
+      searching
+          ? SearchOverlay(dismiss: () => setState(() => searching = false))
+          : const SizedBox.shrink(),
+    ]);
   }
 }

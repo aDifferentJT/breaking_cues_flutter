@@ -91,10 +91,16 @@ class _CountdownView extends StatelessWidget {
 
 @immutable
 class Output extends StatefulWidget {
+  final StreamSink<void> requestUpdateStreamSink;
   final Stream<Message> stream;
   final String name;
 
-  const Output({super.key, required this.stream, required this.name});
+  const Output({
+    super.key,
+    required this.requestUpdateStreamSink,
+    required this.stream,
+    required this.name,
+  });
 
   @override
   createState() => OutputState();
@@ -166,6 +172,8 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
           ..addListener(() => setState(() {}));
 
     _streamSubscription = widget.stream.listen(process);
+
+    widget.requestUpdateStreamSink.add(null);
   }
 
   @override
@@ -188,6 +196,7 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
 
   @override
   dispose() {
+    _captionDecorationController.dispose();
     _streamSubscription.cancel();
     super.dispose();
   }
@@ -265,10 +274,16 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
 }
 
 class ScaledOutput extends StatelessWidget {
+  final StreamSink<void> requestUpdateStreamSink;
   final Stream<Message> stream;
   final String name;
 
-  const ScaledOutput({super.key, required this.stream, required this.name});
+  const ScaledOutput({
+    super.key,
+    required this.requestUpdateStreamSink,
+    required this.stream,
+    required this.name,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +296,11 @@ class ScaledOutput extends StatelessWidget {
         child: OverflowBox(
           maxWidth: 1920,
           maxHeight: 1080,
-          child: Output(stream: stream, name: name),
+          child: Output(
+            requestUpdateStreamSink: requestUpdateStreamSink,
+            stream: stream,
+            name: name,
+          ),
         ),
       );
     });

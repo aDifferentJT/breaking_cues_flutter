@@ -13,6 +13,8 @@ dependencies:
     path: ../core
   flutter_utils:
     path: ../flutter_utils
+  fonts:
+    path: ../fonts
   flutter:
     sdk: flutter
   collection: ^1.16.0
@@ -29,22 +31,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - packages/output/fonts/smufl/metadata/classes.json
-    - packages/output/fonts/smufl/metadata/glyphnames.json
-    - packages/output/fonts/smufl/metadata/ranges.json
-    - packages/output/fonts/bravura/redist/bravura_metadata.json
-    - packages/output/fonts/Leland/leland_metadata.json
-  fonts:
-    - family: Bravura
-      fonts:
-        - asset: packages/output/fonts/bravura/redist/otf/Bravura.otf
-    - family: BravuraText
-      fonts:
-        - asset: packages/output/fonts/bravura/redist/otf/BravuraText.otf
-    - family: Leland
-      fonts:
-        - asset: packages/output/fonts/Leland/Leland.otf
-    - family: LelandText
-      fonts:
-        - asset: packages/output/fonts/Leland/LelandText.otf

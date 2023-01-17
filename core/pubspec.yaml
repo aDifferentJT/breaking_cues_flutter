@@ -1,5 +1,8 @@
 name: core
 description: Breaking Cues core package.
+
+publish_to: 'none'
+
 version: 0.0.1
 homepage:
 

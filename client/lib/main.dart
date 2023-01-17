@@ -65,33 +65,36 @@ class MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        LeftTabs(children: [
-          TabEntry(
-            icon: const Text('Programme').rotated(quarterTurns: 1),
-            body: ProgrammePanel(
-              updateStream: streams.updateStream,
-              updateStreamSink: streams.updateStreamSink,
-              previewStream: previewStream.stream,
-              previewStreamSink: previewStream.sink,
-              liveStream: streams.liveStream,
-              liveStreamSink: streams.liveStreamSink,
+        LeftTabs(
+          keepHiddenChildrenAlive: true,
+          children: [
+            TabEntry(
+              icon: const Text('Programme').rotated(quarterTurns: 1),
+              body: ProgrammePanel(
+                updateStream: streams.updateStream,
+                updateStreamSink: streams.updateStreamSink,
+                previewStream: previewStream.stream,
+                previewStreamSink: previewStream.sink,
+                liveStream: streams.liveStream,
+                liveStreamSink: streams.liveStreamSink,
+              ),
             ),
-          ),
-          TabEntry(
-            icon: const Text('Settings').rotated(quarterTurns: 1),
-            body: GlobalSettingsPanel(
-              updateStream: streams.updateStream,
-              updateStreamSink: streams.updateStreamSink,
+            TabEntry(
+              icon: const Text('Settings').rotated(quarterTurns: 1),
+              body: GlobalSettingsPanel(
+                updateStream: streams.updateStream,
+                updateStreamSink: streams.updateStreamSink,
+              ),
             ),
-          ),
-        ]).expanded(),
+          ],
+        ).expanded(),
         const VerticalDivider(
           width: 5,
           thickness: 5,
           color: CupertinoColors.darkBackgroundGray,
         ),
         PreviewPanel(
-          requestUpdateStream: streams.requestUpdateStreamSink,
+          requestUpdateStreamSink: streams.requestUpdateStreamSink,
           updateStream: streams.updateStream,
           updateStreamSink: streams.updateStreamSink,
           previewStream: previewStream.stream,
@@ -103,6 +106,7 @@ class MyHomePageState extends State<MyHomePage> {
           color: CupertinoColors.darkBackgroundGray,
         ),
         LivePanel(
+          requestUpdateStreamSink: streams.requestUpdateStreamSink,
           stream: streams.liveStream,
           streamSink: streams.liveStreamSink,
         ).expanded(),

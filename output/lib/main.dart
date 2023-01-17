@@ -31,7 +31,11 @@ class _OutputAppState extends State<_OutputApp> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: ScaledOutput(stream: streams.liveStream, name: widget.name),
+      child: ScaledOutput(
+        requestUpdateStreamSink: streams.requestUpdateStreamSink,
+        stream: streams.liveStream,
+        name: widget.name,
+      ),
     );
   }
 }

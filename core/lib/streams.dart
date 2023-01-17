@@ -31,15 +31,23 @@ class ClientStreams {
     final liveStream = StreamController<Message>.broadcast();
 
     var programme = Programme.new_();
+    Message liveMessage = CloseMessage();
 
     final requestUpdateStreamSubscription =
-        requestUpdateStream.stream.listen((_) => updateStream.add(programme));
+        requestUpdateStream.stream.listen((_) {
+      updateStream.add(programme);
+      liveStream.add(liveMessage);
+    });
     final updateStreamSubscription =
         updateStream.stream.listen((Programme newProgramme) {
       programme = newProgramme;
     });
+    final liveStreamSubscription = liveStream.stream.listen((Message message) {
+      liveMessage = message;
+    });
 
     dispose() {
+      liveStreamSubscription.cancel();
       updateStreamSubscription.cancel();
       requestUpdateStreamSubscription.cancel();
 

@@ -1,0 +1,100 @@
+name: fonts
+description: A new Flutter package project.
+
+publish_to: 'none'
+
+version: 0.0.1
+homepage:
+
+environment:
+  sdk: '>=2.18.6 <3.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  assets:
+    - packages/fonts/smufl/metadata/classes.json
+    - packages/fonts/smufl/metadata/glyphnames.json
+    - packages/fonts/smufl/metadata/ranges.json
+    - packages/fonts/bravura/redist/bravura_metadata.json
+    - packages/fonts/Leland/leland_metadata.json
+  fonts:
+    - family: C059
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/C059-Roman.otf
+        - asset: packages/fonts/urw-core35-fonts/C059-Bold.otf
+        - asset: packages/fonts/urw-core35-fonts/C059-Italic.otf
+        - asset: packages/fonts/urw-core35-fonts/C059-BdIta.otf
+    - family: D050000L
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/D050000L.otf
+    - family: NimbusMonoPS
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/NimbusMonoPS-Regular.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusMonoPS-Bold.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusMonoPS-Italic.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusMonoPS-BoldItalic.otf
+    - family: NimbusRoman
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/NimbusRoman-Regular.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusRoman-Bold.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusRoman-Italic.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusRoman-BoldItalic.otf
+    - family: NimbusSans
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/NimbusSans-Regular.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSans-Bold.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSans-Italic.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSans-BoldItalic.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSans-Oblique.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSans-BoldOblique.otf
+    - family: NimbusSansNarrow
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/NimbusSansNarrow-Regular.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSansNarrow-Bold.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSansNarrow-Oblique.otf
+        - asset: packages/fonts/urw-core35-fonts/NimbusSansNarrow-BoldOblique.otf
+    - family: P052
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/P052-Roman.otf
+        - asset: packages/fonts/urw-core35-fonts/P052-Bold.otf
+        - asset: packages/fonts/urw-core35-fonts/P052-Italic.otf
+        - asset: packages/fonts/urw-core35-fonts/P052-BoldItalic.otf
+    - family: StandardSymbolsPS
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/StandardSymbolsPS.otf
+    - family: URWBookman
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/URWBookman-Light.otf
+        - asset: packages/fonts/urw-core35-fonts/URWBookman-Demi.otf
+        - asset: packages/fonts/urw-core35-fonts/URWBookman-LightItalic.otf
+        - asset: packages/fonts/urw-core35-fonts/URWBookman-DemiItalic.otf
+    - family: URWGothic
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/URWGothic-Book.otf
+        - asset: packages/fonts/urw-core35-fonts/URWGothic-Demi.otf
+        - asset: packages/fonts/urw-core35-fonts/URWGothic-BookOblique.otf
+        - asset: packages/fonts/urw-core35-fonts/URWGothic-DemiOblique.otf
+    - family: Z003
+      fonts:
+        - asset: packages/fonts/urw-core35-fonts/Z003-MediumItalic.otf
+    - family: Bravura
+      fonts:
+        - asset: packages/fonts/bravura/redist/otf/Bravura.otf
+    - family: BravuraText
+      fonts:
+        - asset: packages/fonts/bravura/redist/otf/BravuraText.otf
+    - family: Leland
+      fonts:
+        - asset: packages/fonts/Leland/Leland.otf
+    - family: LelandText
+      fonts:
+        - asset: packages/fonts/Leland/LelandText.otf

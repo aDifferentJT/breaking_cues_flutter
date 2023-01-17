@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:built_collection/built_collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -470,6 +473,132 @@ class _OptionalColourControlState extends State<OptionalColourControl> {
 }
 
 @immutable
+class FontFamilyControl extends StatefulWidget {
+  final String label;
+  final String fontFamily;
+  final void Function(String) setFontFamily;
+
+  const FontFamilyControl({
+    super.key,
+    required this.label,
+    required this.fontFamily,
+    required this.setFontFamily,
+  });
+
+  @override
+  createState() => _FontFamilyControlState();
+}
+
+class _FontFamilyControlState extends State<FontFamilyControl> {
+  final _controller = TextEditingController();
+
+  void updateText() {
+    _controller.text = widget.fontFamily;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    updateText();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant FontFamilyControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    updateText();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
+        CupertinoTextField(
+          controller: _controller,
+          style: const TextStyle(color: Colors.white),
+          onSubmitted: widget.setFontFamily,
+        ).expanded(),
+      ],
+    ).padding(const EdgeInsets.all(8));
+  }
+}
+
+@immutable
+class OptionalFontFamilyControl extends StatefulWidget {
+  final String label;
+  final String? fontFamily;
+  final String defaultFontFamily;
+  final void Function(String?) setFontFamily;
+
+  const OptionalFontFamilyControl({
+    super.key,
+    required this.label,
+    required this.fontFamily,
+    required this.defaultFontFamily,
+    required this.setFontFamily,
+  });
+
+  @override
+  createState() => _OptionalFontFamilyControlState();
+}
+
+class _OptionalFontFamilyControlState extends State<OptionalFontFamilyControl> {
+  final _controller = TextEditingController();
+
+  void updateText() {
+    _controller.text = widget.fontFamily ?? widget.defaultFontFamily;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    updateText();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant OptionalFontFamilyControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    updateText();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
+        CupertinoTextField(
+          controller: _controller,
+          style: TextStyle(
+            color: widget.fontFamily != null
+                ? CupertinoColors.activeBlue
+                : Colors.white,
+          ),
+          onSubmitted: widget.setFontFamily,
+        ).expanded(),
+        Icon(
+          Icons.restore,
+          color: widget.fontFamily == null ? CupertinoColors.activeBlue : null,
+        )
+            .gestureDetector(onTap: () => widget.setFontFamily(null))
+            .padding(const EdgeInsets.all(4)),
+      ],
+    ).padding(const EdgeInsets.all(8));
+  }
+}
+
+@immutable
 class SizeControl extends StatefulWidget {
   final String label;
   final double size;
@@ -634,6 +763,12 @@ class DisplaySettingsControl extends StatelessWidget {
         setColour: (colour) =>
             update(displaySettings.withTextColour(colour.colour)),
       ),
+      FontFamilyControl(
+        label: "Font Family:",
+        fontFamily: displaySettings.fontFamily,
+        setFontFamily: (fontFamily) =>
+            update(displaySettings.withFontFamily(fontFamily)),
+      ),
       SizeControl(
         label: "Title Size:",
         size: displaySettings.titleSize,
@@ -687,6 +822,13 @@ class OptionalDisplaySettingsControl extends StatelessWidget {
         setColour: (colour) =>
             update(displaySettings.withTextColour(colour?.colour)),
       ),
+      OptionalFontFamilyControl(
+        label: "Font Family:",
+        fontFamily: displaySettings.fontFamily,
+        defaultFontFamily: defaultSettings.fontFamily,
+        setFontFamily: (fontFamily) =>
+            update(displaySettings.withFontFamily(fontFamily)),
+      ),
       OptionalSizeControl(
         label: "Title Size:",
         size: displaySettings.titleSize,
@@ -706,5 +848,185 @@ class OptionalDisplaySettingsControl extends StatelessWidget {
         setSize: (size) => update(displaySettings.withBodySize(size)),
       ),
     ]);
+  }
+}
+
+@immutable
+class _FoldingRow extends StatefulWidget {
+  final Widget header;
+  final Widget body;
+  final bool selected;
+  final void Function() toggleSelect;
+
+  const _FoldingRow({
+    required this.header,
+    required this.body,
+    required this.selected,
+    required this.toggleSelect,
+  });
+
+  @override
+  createState() => _FoldingRowState();
+}
+
+class _FoldingRowState extends State<_FoldingRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController openAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    openAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..addListener(() => setState(() {}));
+
+    if (widget.selected) {
+      openAnimation.forward();
+    } else {
+      openAnimation.reverse();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _FoldingRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.selected) {
+      openAnimation.forward();
+    } else {
+      openAnimation.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    openAnimation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Row(children: [
+        widget.header,
+        const Spacer(),
+        const Icon(CupertinoIcons.chevron_right).transform(
+            transform: Matrix4.rotationZ(
+              Tween(begin: 0.0, end: pi / 2).evaluate(openAnimation),
+            ),
+            alignment: Alignment.center),
+      ])
+          .container(
+            padding: const EdgeInsets.all(8),
+            color: widget.selected
+                ? CupertinoColors.activeBlue
+                : Colors.transparent,
+          )
+          .gestureDetector(onTap: widget.toggleSelect),
+      widget.body.sizeTransition(
+        sizeFactor: openAnimation,
+      ),
+    ]);
+  }
+}
+
+@immutable
+class DisplaySettingsPanel extends StatefulWidget {
+  final BuiltMap<String, DisplaySettings> displaySettings;
+  final void Function(BuiltMap<String, DisplaySettings>) update;
+
+  const DisplaySettingsPanel({
+    super.key,
+    required this.displaySettings,
+    required this.update,
+  });
+
+  @override
+  createState() => _DisplaySettingsPanelState();
+}
+
+class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
+  String? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: widget.displaySettings.entries.map((entry) {
+        return _FoldingRow(
+          header: Text(entry.key),
+          body: DisplaySettingsControl(
+            displaySettings: entry.value,
+            update: (newSettings) => widget.update(
+              widget.displaySettings
+                  .rebuild((builder) => builder[entry.key] = newSettings),
+            ),
+          )
+              .container(color: CupertinoColors.darkBackgroundGray)
+              .padding(const EdgeInsets.only(left: 16, bottom: 8)),
+          selected: selected == entry.key,
+          toggleSelect: () {
+            if (selected == entry.key) {
+              setState(() => selected = null);
+            } else {
+              setState(() => selected = entry.key);
+            }
+          },
+        );
+      }).toList(growable: false),
+    );
+  }
+}
+
+@immutable
+class OptionalDisplaySettingsPanel extends StatefulWidget {
+  final BuiltMap<String, OptionalDisplaySettings> displaySettings;
+  final void Function(BuiltMap<String, OptionalDisplaySettings>) update;
+  final BuiltMap<String, DisplaySettings> defaultSettings;
+
+  const OptionalDisplaySettingsPanel({
+    super.key,
+    required this.displaySettings,
+    required this.update,
+    required this.defaultSettings,
+  });
+
+  @override
+  createState() => _OptionalDisplaySettingsPanelState();
+}
+
+class _OptionalDisplaySettingsPanelState
+    extends State<OptionalDisplaySettingsPanel> {
+  String? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: widget.displaySettings.entries.map((entry) {
+        return _FoldingRow(
+          header: Text(entry.key),
+          body: OptionalDisplaySettingsControl(
+            displaySettings: entry.value,
+            update: (newSettings) => widget.update(
+              widget.displaySettings
+                  .rebuild((builder) => builder[entry.key] = newSettings),
+            ),
+            defaultSettings: widget.defaultSettings[entry.key] ??
+                const DisplaySettings.default_(),
+          )
+              .container(color: CupertinoColors.darkBackgroundGray)
+              .padding(const EdgeInsets.only(left: 16, bottom: 8)),
+          selected: selected == entry.key,
+          toggleSelect: () {
+            if (selected == entry.key) {
+              setState(() => selected = null);
+            } else {
+              setState(() => selected = entry.key);
+            }
+          },
+        );
+      }).toList(growable: false),
+    );
   }
 }

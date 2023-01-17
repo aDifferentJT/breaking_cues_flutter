@@ -14,9 +14,15 @@ class TabEntry {
 @immutable
 class LeftTabs extends StatefulWidget {
   final double tabWidth;
+  final bool keepHiddenChildrenAlive;
   final List<TabEntry> children;
 
-  const LeftTabs({super.key, this.tabWidth = 26, required this.children});
+  const LeftTabs({
+    super.key,
+    this.tabWidth = 26,
+    required this.keepHiddenChildrenAlive,
+    required this.children,
+  });
 
   @override
   createState() => _LeftTabsState();
@@ -49,16 +55,22 @@ class _LeftTabsState extends State<LeftTabs> {
             color: Colors.black,
           )
           .sized(width: widget.tabWidth + 4),
-      Stack(
-        children: widget.children
-            .mapIndexed(
-              (index, tabEntry) => Offstage(
-                offstage: index != selected,
-                child: tabEntry.body,
-              ),
-            )
-            .toList(growable: false),
-      ).expanded(),
+      (widget.keepHiddenChildrenAlive
+              ? Stack(
+                  children: widget.children
+                      .mapIndexed(
+                        (index, tabEntry) => Offstage(
+                          offstage: index != selected,
+                          child: tabEntry.body,
+                        ),
+                      )
+                      .toList(growable: false),
+                )
+              : selected < widget.children.length
+                  ? widget.children[selected].body
+                      .container(key: ValueKey(selected))
+                  : const SizedBox.expand())
+          .expanded(),
     ]);
   }
 }

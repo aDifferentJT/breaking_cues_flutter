@@ -181,6 +181,34 @@ extension WidgetModifiers on Widget {
         child: this,
       );
 
+  Widget listener({
+    Key? key,
+    void Function(PointerDownEvent)? onPointerDown,
+    void Function(PointerMoveEvent)? onPointerMove,
+    void Function(PointerUpEvent)? onPointerUp,
+    void Function(PointerHoverEvent)? onPointerHover,
+    void Function(PointerCancelEvent)? onPointerCancel,
+    void Function(PointerPanZoomStartEvent)? onPointerPanZoomStart,
+    void Function(PointerPanZoomUpdateEvent)? onPointerPanZoomUpdate,
+    void Function(PointerPanZoomEndEvent)? onPointerPanZoomEnd,
+    void Function(PointerSignalEvent)? onPointerSignal,
+    HitTestBehavior behavior = HitTestBehavior.deferToChild,
+  }) =>
+      Listener(
+        key: key,
+        onPointerDown: onPointerDown,
+        onPointerMove: onPointerMove,
+        onPointerUp: onPointerUp,
+        onPointerHover: onPointerHover,
+        onPointerCancel: onPointerCancel,
+        onPointerPanZoomStart: onPointerPanZoomStart,
+        onPointerPanZoomUpdate: onPointerPanZoomUpdate,
+        onPointerPanZoomEnd: onPointerPanZoomEnd,
+        onPointerSignal: onPointerSignal,
+        behavior: behavior,
+        child: this,
+      );
+
   Widget container({
     Key? key,
     AlignmentGeometry? alignment,

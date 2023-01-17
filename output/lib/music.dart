@@ -55,33 +55,36 @@ class _SMuFL {
   });
 
   static Future<_SMuFL> load() async {
-    return _SMuFL(
+    print('loading smufl');
+    final smufl = _SMuFL(
       classes: jsonDecode(
         await rootBundle.loadString(
-          'packages/output/fonts/smufl/metadata/classes.json',
+          'packages/fonts/smufl/metadata/classes.json',
         ),
       ),
       glyphnames: jsonDecode(
         await rootBundle.loadString(
-          'packages/output/fonts/smufl/metadata/glyphnames.json',
+          'packages/fonts/smufl/metadata/glyphnames.json',
         ),
       ),
       ranges: jsonDecode(
         await rootBundle.loadString(
-          'packages/output/fonts/smufl/metadata/ranges.json',
+          'packages/fonts/smufl/metadata/ranges.json',
         ),
       ),
       bravuraMetadata: jsonDecode(
         await rootBundle.loadString(
-          'packages/output/fonts/bravura/redist/bravura_metadata.json',
+          'packages/fonts/bravura/redist/bravura_metadata.json',
         ),
       ),
       lelandMetadata: jsonDecode(
         await rootBundle.loadString(
-          'packages/output/fonts/Leland/leland_metadata.json',
+          'packages/fonts/Leland/leland_metadata.json',
         ),
       ),
     );
+    print('loaded smufl');
+    return smufl;
   }
 
   String glyph(String name) {
@@ -133,7 +136,7 @@ class _SMuFLPainter {
               fontSize: staveSpacing,
               fontFamily: 'Leland',
               textBaseline: TextBaseline.alphabetic,
-              package: 'output',
+              package: 'fonts',
             ),
           ),
           textDirection: TextDirection.ltr,

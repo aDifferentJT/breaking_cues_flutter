@@ -48,6 +48,13 @@ class RRectAnimationTestState extends State<RRectAnimationTest>
   }
 
   @override
+  void dispose() {
+    animationController.dispose();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final rrect = rrectAnimation.evaluate(animationController);
 

@@ -60,6 +60,7 @@ class DisplaySettings {
   final Style style;
   final Colour backgroundColour;
   final Colour textColour;
+  final String fontFamily;
   final double titleSize;
   final double subtitleSize;
   final double bodySize;
@@ -68,6 +69,7 @@ class DisplaySettings {
     required this.style,
     required this.backgroundColour,
     required this.textColour,
+    required this.fontFamily,
     required this.titleSize,
     required this.subtitleSize,
     required this.bodySize,
@@ -77,6 +79,7 @@ class DisplaySettings {
       : style = Style.bottomLines,
         backgroundColour = LiturgicalColours.gold,
         textColour = const Colour(a: 0xFF, r: 0, g: 0, b: 0),
+        fontFamily = 'URWBookman',
         titleSize = 75,
         subtitleSize = 25,
         bodySize = 50;
@@ -85,6 +88,7 @@ class DisplaySettings {
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
@@ -95,6 +99,7 @@ class DisplaySettings {
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
@@ -104,6 +109,17 @@ class DisplaySettings {
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
+        titleSize: titleSize,
+        subtitleSize: subtitleSize,
+        bodySize: bodySize,
+      );
+
+  DisplaySettings withFontFamily(String fontFamily) => DisplaySettings(
+        style: style,
+        backgroundColour: backgroundColour,
+        textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
@@ -113,6 +129,7 @@ class DisplaySettings {
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
@@ -122,6 +139,7 @@ class DisplaySettings {
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
@@ -131,6 +149,7 @@ class DisplaySettings {
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
@@ -140,6 +159,7 @@ class DisplaySettings {
       : style = Style.fromJson(json['style']),
         backgroundColour = Colour.fromJson(json['backgroundColour']),
         textColour = Colour.fromJson(json['textColour']),
+        fontFamily = json['fontFamily'],
         titleSize = json['titleSize'],
         subtitleSize = json['subtitleSize'],
         bodySize = json['bodySize'];
@@ -148,6 +168,7 @@ class DisplaySettings {
         'style': style.toJson(),
         'backgroundColour': backgroundColour.toJson(),
         'textColour': textColour.toJson(),
+        'fontFamily': fontFamily,
         'titleSize': titleSize,
         'subtitleSize': subtitleSize,
         'bodySize': bodySize,
@@ -159,17 +180,28 @@ class OptionalDisplaySettings {
   final Style? style;
   final Colour? backgroundColour;
   final Colour? textColour;
+  final String? fontFamily;
   final double? titleSize;
   final double? subtitleSize;
   final double? bodySize;
 
-  const OptionalDisplaySettings({
-    this.style,
-    this.backgroundColour,
-    this.textColour,
-    this.titleSize,
-    this.subtitleSize,
-    this.bodySize,
+  const OptionalDisplaySettings()
+      : style = null,
+        backgroundColour = null,
+        textColour = null,
+        fontFamily = null,
+        titleSize = null,
+        subtitleSize = null,
+        bodySize = null;
+
+  const OptionalDisplaySettings._byParts({
+    required this.style,
+    required this.backgroundColour,
+    required this.textColour,
+    required this.fontFamily,
+    required this.titleSize,
+    required this.subtitleSize,
+    required this.bodySize,
   });
 
   OptionalDisplaySettings.fromJson(Map<String, dynamic> json)
@@ -180,6 +212,7 @@ class OptionalDisplaySettings {
         textColour = json['textColour'] != null
             ? Colour.fromJson(json['textColour'])
             : null,
+        fontFamily = json['fontFamily'],
         titleSize = json['titleSize'],
         subtitleSize = json['subtitleSize'],
         bodySize = json['bodySize'];
@@ -197,65 +230,84 @@ class OptionalDisplaySettings {
         style: style ?? defaults.style,
         backgroundColour: backgroundColour ?? defaults.backgroundColour,
         textColour: textColour ?? defaults.textColour,
+        fontFamily: fontFamily ?? defaults.fontFamily,
         titleSize: titleSize ?? defaults.titleSize,
         subtitleSize: subtitleSize ?? defaults.subtitleSize,
         bodySize: bodySize ?? defaults.bodySize,
       );
 
-  OptionalDisplaySettings withStyle(Style? style) => OptionalDisplaySettings(
+  OptionalDisplaySettings withStyle(Style? style) =>
+      OptionalDisplaySettings._byParts(
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
       );
 
   OptionalDisplaySettings withBackgroundColour(Colour? backgroundColour) =>
-      OptionalDisplaySettings(
+      OptionalDisplaySettings._byParts(
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
       );
 
   OptionalDisplaySettings withTextColour(Colour? textColour) =>
-      OptionalDisplaySettings(
+      OptionalDisplaySettings._byParts(
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
+        titleSize: titleSize,
+        subtitleSize: subtitleSize,
+        bodySize: bodySize,
+      );
+
+  OptionalDisplaySettings withFontFamily(String? fontFamily) =>
+      OptionalDisplaySettings._byParts(
+        style: style,
+        backgroundColour: backgroundColour,
+        textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
       );
 
   OptionalDisplaySettings withTitleSize(double? titleSize) =>
-      OptionalDisplaySettings(
+      OptionalDisplaySettings._byParts(
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
       );
 
   OptionalDisplaySettings withSubtitleSize(double? subtitleSize) =>
-      OptionalDisplaySettings(
+      OptionalDisplaySettings._byParts(
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
       );
 
   OptionalDisplaySettings withBodySize(double? bodySize) =>
-      OptionalDisplaySettings(
+      OptionalDisplaySettings._byParts(
         style: style,
         backgroundColour: backgroundColour,
         textColour: textColour,
+        fontFamily: fontFamily,
         titleSize: titleSize,
         subtitleSize: subtitleSize,
         bodySize: bodySize,
@@ -791,6 +843,7 @@ class Programme {
             style: Style.bottomLines,
             backgroundColour: LiturgicalColours.gold,
             textColour: Colour(a: 0xff, r: 0xff, g: 0xff, b: 0xff),
+            fontFamily: 'URWBookman',
             titleSize: 75,
             subtitleSize: 25,
             bodySize: 50,
@@ -799,6 +852,7 @@ class Programme {
             style: Style.leftThird,
             backgroundColour: LiturgicalColours.gold,
             textColour: Colour(a: 0xff, r: 0xff, g: 0xff, b: 0xff),
+            fontFamily: 'URWBookman',
             titleSize: 75,
             subtitleSize: 25,
             bodySize: 50,

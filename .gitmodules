@@ -7,3 +7,15 @@
 [submodule "output/fonts/smufl"]
 	path = output/fonts/smufl
 	url = https://github.com/w3c/smufl.git
+[submodule "fonts/lib/urw-core35-fonts"]
+	path = fonts/lib/urw-core35-fonts
+	url = https://github.com/twardoch/urw-core35-fonts.git
+[submodule "fonts/lib/Leland"]
+	path = fonts/lib/Leland
+	url = https://github.com/MuseScoreFonts/Leland.git
+[submodule "fonts/lib/bravura"]
+	path = fonts/lib/bravura
+	url = https://github.com/steinbergmedia/bravura.git
+[submodule "fonts/lib/smufl"]
+	path = fonts/lib/smufl
+	url = https://github.com/w3c/smufl.git
