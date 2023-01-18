@@ -7,6 +7,20 @@ extension WidgetModifiers on Widget {
   Widget sized({double? width, double? height}) =>
       SizedBox(width: width, height: height, child: this);
 
+  Widget fractionallySized({
+    Key? key,
+    AlignmentGeometry alignment = Alignment.center,
+    double? widthFactor,
+    double? heightFactor,
+  }) =>
+      FractionallySizedBox(
+        key: key,
+        alignment: alignment,
+        widthFactor: widthFactor,
+        heightFactor: heightFactor,
+        child: this,
+      );
+
   Widget constrained(BoxConstraints constraints) =>
       ConstrainedBox(constraints: constraints, child: this);
 
@@ -414,6 +428,23 @@ extension WidgetModifiers on Widget {
         key: key,
         opacity: opacity,
         alwaysIncludeSemantics: alwaysIncludeSemantics,
+        child: this,
+      );
+
+  Widget intrinsicWidth({
+    Key? key,
+    double? stepWidth,
+    double? stepHeight,
+  }) =>
+      IntrinsicWidth(
+        key: key,
+        stepWidth: stepWidth,
+        stepHeight: stepHeight,
+        child: this,
+      );
+
+  Widget intrinsicHeight({Key? key}) => IntrinsicHeight(
+        key: key,
         child: this,
       );
 }

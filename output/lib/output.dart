@@ -8,6 +8,7 @@ import 'package:intersperse/intersperse.dart';
 import 'package:core/deck.dart';
 import 'package:core/message.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
+import 'package:output/arch.dart';
 
 import 'countdown.dart';
 import 'caption_state.dart';
@@ -31,6 +32,85 @@ class _CountdownView extends StatelessWidget {
       case Style.none:
         return const SizedBox.shrink();
 
+      case Style.topLines:
+        return Stack(children: [
+          Arch(colour: countdown.displaySettings.backgroundColour.flutter)
+              .positionedFill,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Spacer(),
+              Text(
+                countdown.slide.subtitle1,
+                style: countdown.displaySettings.bodyStyle,
+                textAlign: TextAlign.center,
+              ),
+              Divider(
+                height: countdown.displaySettings.subtitleSize / 2,
+                color: countdown.displaySettings.textColour.flutter,
+              ),
+              Text(
+                countdown.slide.subtitle2,
+                style: countdown.displaySettings.bodyStyle,
+                textAlign: TextAlign.center,
+              ),
+              const Spacer(),
+            ],
+          )
+              .constrained(const BoxConstraints(maxWidth: 480))
+              .intrinsicWidth()
+              .container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.all(32),
+              )
+              .fractionallySized(heightFactor: 2 / 3),
+          (countdown.isStopped
+                  ? Text(
+                      countdown.slide.whenStopped,
+                      style: countdown.displaySettings.bodyStyle,
+                      textAlign: TextAlign.center,
+                    )
+                  : Text.rich(
+                      TextSpan(
+                        children: ('The service will begin in #'.split('#'))
+                            .map((text) => TextSpan(text: text))
+                            .cast<InlineSpan>()
+                            .intersperse(
+                              WidgetSpan(
+                                child: DigitalCountdown(
+                                  remaining: countdown.remaining,
+                                  style: countdown.displaySettings.bodyStyle,
+                                ),
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                      style: countdown.displaySettings.bodyStyle,
+                      textAlign: TextAlign.center,
+                    ))
+              .constrained(const BoxConstraints(maxWidth: 480))
+              .container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.all(32),
+              )
+              .fractionallySized(heightFactor: 2 / 3),
+          Text(
+            countdown.slide.title,
+            style: countdown.displaySettings.titleStyle,
+            textAlign: TextAlign.center,
+          )
+              .centered()
+              .constrained(const BoxConstraints(maxWidth: 960))
+              .fractionallySized(
+                alignment: Alignment.topCenter,
+                heightFactor: 1 / 2,
+              )
+              .positionedFill,
+        ]).fractionallySized(
+          alignment: Alignment.topCenter,
+          heightFactor: 1 / 2,
+        );
+
       case Style.leftQuarter:
       case Style.leftThird:
       case Style.leftHalf:
@@ -39,7 +119,6 @@ class _CountdownView extends StatelessWidget {
       case Style.rightThird:
       case Style.rightHalf:
       case Style.rightTwoThirds:
-      case Style.topLines:
       case Style.bottomLines:
       case Style.bottomParagraphs:
       case Style.fullScreen:
@@ -84,7 +163,7 @@ class _CountdownView extends StatelessWidget {
                   ),
             const Spacer(flex: 1),
           ]).container(color: backgroundColour).positionedFill,
-        ]).opacity(countdown.opacity);
+        ]).opacity(1 /*countdown.opacity*/);
     }
   }
 }

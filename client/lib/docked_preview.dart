@@ -78,7 +78,7 @@ class _DockedPreviewState extends State<DockedPreview> {
               ),
             ),
         LeftTabs(
-          keepHiddenChildrenAlive: false,
+          keepHiddenChildrenAlive: true,
           children: widget.defaultSettings.keys
               .map((name) => TabEntry(
                     icon: Text(name).rotated(quarterTurns: 1),

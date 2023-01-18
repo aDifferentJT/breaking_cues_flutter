@@ -354,7 +354,8 @@ abstract class Chunk {
 @immutable
 class CountdownSlide extends Slide {
   final String title;
-  final String subtitle;
+  final String subtitle1;
+  final String subtitle2;
   final String message;
   final String whenStopped;
   final DateTime countdownTo;
@@ -362,7 +363,8 @@ class CountdownSlide extends Slide {
 
   const CountdownSlide({
     required this.title,
-    required this.subtitle,
+    required this.subtitle1,
+    required this.subtitle2,
     required this.message,
     required this.whenStopped,
     required this.countdownTo,
@@ -375,7 +377,8 @@ class CountdownSlide extends Slide {
   @override
   String get editText => 'Countdown to ${countdownTo.toIso8601String()}\n'
       'Title: $title\n'
-      'Subtitle: $subtitle\n'
+      'Subtitle 1: $subtitle1\n'
+      'Subtitle 2: $subtitle2\n'
       'Message: $message\n'
       'After ${stopAt.inSeconds}s show: $whenStopped';
 
@@ -387,7 +390,8 @@ class CountdownSlide extends Slide {
   @override
   int get hashCode => Object.hash(
         title,
-        subtitle,
+        subtitle1,
+        subtitle2,
         message,
         whenStopped,
         countdownTo,
@@ -401,14 +405,16 @@ class CountdownChunk extends Chunk {
 
   CountdownChunk({
     required String title,
-    required String subtitle,
+    required String subtitle1,
+    required String subtitle2,
     required String message,
     required DateTime countdownTo,
     required Duration stopAt,
     required String whenStopped,
   }) : slide = CountdownSlide(
           title: title,
-          subtitle: subtitle,
+          subtitle1: subtitle1,
+          subtitle2: subtitle2,
           message: message,
           whenStopped: whenStopped,
           countdownTo: countdownTo,
@@ -419,7 +425,8 @@ class CountdownChunk extends Chunk {
     if (text.toLowerCase() == 'countdown') {
       return CountdownChunk(
         title: 'Title',
-        subtitle: 'Subtitle',
+        subtitle1: 'Subtitle 1',
+        subtitle2: 'Subtitle 2',
         message: 'The service will begin in #',
         whenStopped: 'The service will begin shortly',
         countdownTo: DateTime(1970),
@@ -429,19 +436,21 @@ class CountdownChunk extends Chunk {
       final match = RegExp(
         '^Countdown to (.*)\n'
         'Title: (.*)\n'
-        'Subtitle: (.*)\n'
+        'Subtitle 1: (.*)\n'
+        'Subtitle 2: (.*)\n'
         'Message: (.*)\n'
         'After ([0-9]*)s show: (.*)\$',
       ).matchAsPrefix(text);
       if (match != null) {
         return CountdownChunk(
           title: match.group(2) ?? '',
-          subtitle: match.group(3) ?? '',
-          message: match.group(4) ?? '',
+          subtitle1: match.group(3) ?? '',
+          subtitle2: match.group(4) ?? '',
+          message: match.group(5) ?? '',
           countdownTo:
               DateTime.tryParse(match.group(1) ?? '') ?? DateTime(1970),
-          stopAt: Duration(seconds: int.tryParse(match.group(5) ?? '') ?? 60),
-          whenStopped: match.group(6) ?? '',
+          stopAt: Duration(seconds: int.tryParse(match.group(6) ?? '') ?? 60),
+          whenStopped: match.group(7) ?? '',
         );
       } else {
         return null;
@@ -452,7 +461,8 @@ class CountdownChunk extends Chunk {
   CountdownChunk.fromJson(Map<String, dynamic> json)
       : this(
           title: json['title'],
-          subtitle: json['subtitle'],
+          subtitle1: json['subtitle1'],
+          subtitle2: json['subtitle2'],
           message: json['message'],
           whenStopped: json['whenStopped'],
           countdownTo: DateTime.tryParse(json['countdownTo']) ?? DateTime(1970),
@@ -463,7 +473,8 @@ class CountdownChunk extends Chunk {
   Map<String, dynamic> toJson() => {
         'type': 'countdown',
         'title': slide.title,
-        'subtitle': slide.subtitle,
+        'subtitle1': slide.subtitle1,
+        'subtitle2': slide.subtitle2,
         'message': slide.message,
         'countdownTo': slide.countdownTo.toIso8601String(),
         'stopAt': slide.stopAt.inMicroseconds,

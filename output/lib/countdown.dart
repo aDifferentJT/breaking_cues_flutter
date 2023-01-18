@@ -54,7 +54,7 @@ class AnalogueCountdownPainter extends CustomPainter {
       );
     }
 
-    canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), _paint);
+    canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
     canvas.drawArc(
       Rect.fromCenter(
         center: center,
@@ -68,7 +68,7 @@ class AnalogueCountdownPainter extends CustomPainter {
     );
     canvas.saveLayer(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      _paint..blendMode = BlendMode.dstOut,
+      Paint()..blendMode = BlendMode.dstOut,
     );
     canvas.drawLine(
       center,
@@ -78,7 +78,6 @@ class AnalogueCountdownPainter extends CustomPainter {
             size.shortestSide / 2 - strokeWidth * 4,
           ),
       _paint
-        ..color = Colors.white
         ..maskFilter = MaskFilter.blur(BlurStyle.solid, strokeWidth / 4)
         ..strokeCap = StrokeCap.butt
         ..style = PaintingStyle.stroke,
@@ -93,9 +92,7 @@ class AnalogueCountdownPainter extends CustomPainter {
             remaining.inSeconds * 2 * pi / 60,
             size.shortestSide / 2 - strokeWidth * 4,
           ),
-      _paint
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke,
+      _paint..style = PaintingStyle.stroke,
     );
   }
 
