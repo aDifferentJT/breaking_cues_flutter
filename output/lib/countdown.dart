@@ -165,7 +165,7 @@ class DigitalCountdown extends StatelessWidget {
           (char) => Text(
             String.fromCharCode(char),
             style: style,
-          ).centered().sized(width: digitWidth),
+          ).aligned(Alignment.bottomCenter).sized(width: digitWidth),
         );
     return Row(
       mainAxisSize: MainAxisSize.min,

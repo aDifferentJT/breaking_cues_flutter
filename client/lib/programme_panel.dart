@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:built_collection/built_collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -7,100 +8,72 @@ import 'package:core/deck.dart';
 import 'package:core/message.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
-import 'button.dart';
+import 'packed_button_row.dart';
 import 'open_save.dart';
 
 class ProgrammeRowButtons extends StatelessWidget {
+  final int rowIndex;
+  final DeckKey deckKey;
+  final bool selected;
+  final void Function() delete;
+  final bool isLive;
+  final void Function() goLive;
+  final void Function() closeLive;
+
   const ProgrammeRowButtons({
     super.key,
     required this.rowIndex,
     required this.deckKey,
     required this.selected,
-    required this.onDelete,
+    required this.delete,
     required this.isLive,
     required this.goLive,
+    required this.closeLive,
   });
-
-  final int rowIndex;
-  final DeckKey deckKey;
-  final bool selected;
-  final void Function() onDelete;
-  final bool isLive;
-  final void Function() goLive;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(1),
-          child: GestureDetector(
-            onTap: onDelete,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: CupertinoColors.destructiveRed,
-                ),
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(5),
-                ),
-              ),
-              padding: const EdgeInsets.all(2),
-              child: const Icon(
-                CupertinoIcons.delete_solid,
-                color: CupertinoColors.destructiveRed,
-              ),
-            ),
-          ),
+    return PackedButtonRow(
+      buttons: [
+        PackedButton(
+          child: const Icon(CupertinoIcons.delete_solid)
+              .padding(const EdgeInsets.all(1)),
+          colour: CupertinoColors.destructiveRed,
+          onTap: delete,
         ),
-        Padding(
-          padding: const EdgeInsets.all(1),
-          child: ReorderableDragStartListener(
+        PackedButton(
+          child: const Icon(CupertinoIcons.arrow_up_arrow_down)
+              .padding(const EdgeInsets.all(1)),
+          colour: selected ? Colors.black : CupertinoColors.activeBlue,
+          wrapper: (child) => ReorderableDragStartListener(
             index: rowIndex,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: selected ? Colors.black : CupertinoColors.activeBlue,
-                ),
-              ),
-              padding: const EdgeInsets.all(2),
-              child: Icon(
-                CupertinoIcons.arrow_up_arrow_down,
-                color: selected ? Colors.black : CupertinoColors.activeBlue,
-              ),
-            ),
+            child: child,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(1),
-          child: GestureDetector(
-            onTap: goLive,
-            child: Container(
-              decoration: BoxDecoration(
-                color: isLive ? Colors.red : Colors.transparent,
-                border: Border.all(
-                  color: const Color.fromARGB(255, 255, 0, 0),
-                ),
-                borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(5),
-                ),
-              ),
-              padding: const EdgeInsets.all(2),
-              child: Icon(
-                CupertinoIcons.film,
-                color: isLive
-                    ? Colors.black
-                    : const Color.fromARGB(255, 255, 0, 0),
-              ),
-            ),
-          ),
+        PackedButton(
+          child:
+              const Icon(CupertinoIcons.film).padding(const EdgeInsets.all(1)),
+          colour: Colors.red,
+          filled: isLive,
+          onTap: isLive ? closeLive : goLive,
         ),
-      ],
+      ].toBuiltList(),
+      padding: const EdgeInsets.all(1),
     );
   }
 }
 
 class ProgrammeRow extends StatelessWidget {
+  final int rowIndex;
+  final DeckKey deckKey;
+  final String label;
+  final bool selected;
+  final void Function() onSelect;
+  final void Function() onDelete;
+  final bool isLive;
+  final void Function() goLive;
+  final void Function() closeLive;
+
   const ProgrammeRow({
     super.key,
     required this.rowIndex,
@@ -111,52 +84,41 @@ class ProgrammeRow extends StatelessWidget {
     required this.onDelete,
     required this.isLive,
     required this.goLive,
+    required this.closeLive,
   });
-
-  final int rowIndex;
-  final DeckKey deckKey;
-  final String label;
-  final bool selected;
-  final void Function() onSelect;
-  final void Function() onDelete;
-  final bool isLive;
-  final void Function() goLive;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Divider(
-          color: CupertinoColors.darkBackgroundGray,
-          height: 0,
-          thickness: 1,
-        ),
-        GestureDetector(
-          onTap: () => onSelect(),
-          child: Container(
+    return Column(children: [
+      const Divider(
+        color: CupertinoColors.darkBackgroundGray,
+        height: 0,
+        thickness: 1,
+      ),
+      Row(children: [
+        Text(label),
+        const Spacer(),
+        ProgrammeRowButtons(
+          rowIndex: rowIndex,
+          deckKey: deckKey,
+          selected: selected,
+          delete: onDelete,
+          isLive: isLive,
+          goLive: goLive,
+          closeLive: closeLive,
+        )
+      ])
+          .container(
             padding: const EdgeInsets.all(10),
-            color: selected ? CupertinoColors.activeBlue : Colors.transparent,
-            child: Row(children: [
-              Text(label),
-              const Spacer(),
-              ProgrammeRowButtons(
-                rowIndex: rowIndex,
-                deckKey: deckKey,
-                selected: selected,
-                onDelete: onDelete,
-                isLive: isLive,
-                goLive: goLive,
-              )
-            ]),
-          ),
-        ),
-        const Divider(
-          color: CupertinoColors.darkBackgroundGray,
-          height: 0,
-          thickness: 1,
-        ),
-      ],
-    );
+            color: selected ? CupertinoColors.activeBlue : Colors.black,
+          )
+          .gestureDetector(onTap: onSelect),
+      const Divider(
+        color: CupertinoColors.darkBackgroundGray,
+        height: 0,
+        thickness: 1,
+      ),
+    ]);
   }
 }
 
@@ -253,33 +215,61 @@ class ProgrammePanelState extends State<ProgrammePanel> {
               style: Theme.of(context).primaryTextTheme.headlineSmall,
             ),
             const Spacer(),
-            OpenButton(onOpen: widget.updateStreamSink.add)
-                .padding(const EdgeInsets.symmetric(horizontal: 4)),
-            SaveButton(programme: programme)
-                .padding(const EdgeInsets.symmetric(horizontal: 4)),
-            const SizedBox(width: 32),
-            Button(
-              onTap: () => widget.updateStreamSink.add(
-                programme.withDecks(
-                  programme.decks.rebuild((builder) {
-                    builder.insert(
-                      programme.decks
-                              .indexWhere((deck) => deck.key == previewDeck) +
-                          1,
-                      Deck(
-                        key: DeckKey.distinctFrom(
-                          programme.decks.map((deck) => deck.key),
-                        ),
-                      ),
-                    );
-                  }),
+            PackedButtonRow(
+              buttons: [
+                PackedButton(
+                  child: const Icon(CupertinoIcons.doc)
+                      .padding(const EdgeInsets.all(4)),
+                  colour: CupertinoColors.activeBlue,
+                  onTap: () => widget.updateStreamSink.add(Programme.new_()),
                 ),
-              ),
-              child: const Icon(
-                CupertinoIcons.add,
-                color: CupertinoColors.activeBlue,
-              ),
-            ).padding(const EdgeInsets.symmetric(horizontal: 4)),
+                PackedButton(
+                  child: const Icon(CupertinoIcons.folder_open)
+                      .padding(const EdgeInsets.all(4)),
+                  colour: CupertinoColors.activeBlue,
+                  onTap: () async {
+                    var programme = await open();
+                    if (programme != null) {
+                      widget.updateStreamSink.add(programme);
+                    }
+                  },
+                ),
+                PackedButton(
+                  child: const Icon(CupertinoIcons.floppy_disk)
+                      .padding(const EdgeInsets.all(4)),
+                  colour: CupertinoColors.activeBlue,
+                  onTap: () => save(programme),
+                ),
+              ].toBuiltList(),
+              padding: const EdgeInsets.all(1),
+            ),
+            const SizedBox(width: 4),
+            PackedButtonRow(
+              buttons: [
+                PackedButton(
+                  child: const Icon(CupertinoIcons.add)
+                      .padding(const EdgeInsets.all(4)),
+                  colour: CupertinoColors.activeBlue,
+                  onTap: () => widget.updateStreamSink.add(
+                    programme.withDecks(
+                      programme.decks.rebuild((builder) {
+                        builder.insert(
+                          programme.decks.indexWhere(
+                                  (deck) => deck.key == previewDeck) +
+                              1,
+                          Deck(
+                            key: DeckKey.distinctFrom(
+                              programme.decks.map((deck) => deck.key),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ].toBuiltList(),
+              padding: const EdgeInsets.all(1),
+            ),
           ],
         ).container(
           padding: const EdgeInsets.all(20),
@@ -296,10 +286,10 @@ class ProgrammePanelState extends State<ProgrammePanel> {
                     newIndex -= 1;
                   }
                   widget.updateStreamSink.add(
-                    programme.withDecks(
-                      programme.decks.rebuild((decks) {
-                        final element = decks.removeAt(oldIndex);
-                        decks.insert(newIndex, element);
+                    programme.mapDecks(
+                      (decks) => decks.rebuild((builder) {
+                        final deck = builder.removeAt(oldIndex);
+                        builder.insert(newIndex, deck);
                       }),
                     ),
                   );
@@ -330,6 +320,7 @@ class ProgrammePanelState extends State<ProgrammePanel> {
                     quiet: false,
                     deckIndex: DeckIndex(deck: deck, index: Index.zero),
                   )),
+                  closeLive: () => widget.liveStreamSink.add(CloseMessage()),
                 );
               },
               itemCount: programme.decks.length,

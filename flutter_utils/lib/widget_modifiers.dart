@@ -447,4 +447,59 @@ extension WidgetModifiers on Widget {
         key: key,
         child: this,
       );
+
+  Widget reorderableDragStartListener({
+    Key? key,
+    required int index,
+    bool enabled = true,
+  }) =>
+      ReorderableDragStartListener(
+        key: key,
+        index: index,
+        enabled: enabled,
+        child: this,
+      );
+
+  Widget defaultTextStyle({
+    Key? key,
+    required TextStyle style,
+    TextAlign? textAlign,
+    bool softWrap = true,
+    TextOverflow overflow = TextOverflow.clip,
+    int? maxLines,
+    TextWidthBasis textWidthBasis = TextWidthBasis.parent,
+    TextHeightBehavior? textHeightBehavior,
+  }) =>
+      DefaultTextStyle(
+        key: key,
+        style: style,
+        textAlign: textAlign,
+        softWrap: softWrap,
+        overflow: overflow,
+        maxLines: maxLines,
+        textWidthBasis: textWidthBasis,
+        textHeightBehavior: textHeightBehavior,
+        child: this,
+      );
+
+  Widget iconTheme({Key? key, required IconThemeData data}) =>
+      IconTheme(key: key, data: data, child: this);
+
+  Widget offstage(
+    bool offstage, {
+    Key? key,
+  }) =>
+      Offstage(
+        key: key,
+        offstage: offstage,
+        child: this,
+      );
+
+  Widget callbackShortcuts({
+    Key? key,
+    required Map<ShortcutActivator, void Function()> bindings,
+  }) =>
+      CallbackShortcuts(key: key, bindings: bindings, child: this);
+
+  Widget wrap(Widget Function(Widget) f) => f(this);
 }

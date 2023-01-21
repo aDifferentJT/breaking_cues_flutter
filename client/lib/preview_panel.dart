@@ -9,7 +9,6 @@ import 'package:core/deck.dart';
 import 'package:core/message.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
-import 'button.dart';
 import 'deck_panel.dart';
 import 'docked_preview.dart';
 import 'left_tabs.dart';
@@ -159,7 +158,6 @@ class PreviewPanelState extends State<PreviewPanel>
     with SingleTickerProviderStateMixin {
   var programme = Programme.new_();
   DeckIndex? deckIndex;
-  bool editing = false;
   bool searching = false;
 
   Index? get selected => deckIndex?.index;
@@ -229,6 +227,19 @@ class PreviewPanelState extends State<PreviewPanel>
     );
   }
 
+  void select(Index index) {
+    if (deckIndex != null) {
+      outputStream.add(ShowMessage(
+        defaultSettings: programme.defaultSettings,
+        quiet: true,
+        deckIndex: DeckIndex(
+          deck: deckIndex!.deck,
+          index: index,
+        ),
+      ));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -258,6 +269,7 @@ class PreviewPanelState extends State<PreviewPanel>
 
   @override
   dispose() {
+    _requestPreviewUpdateStreamSubscription.cancel();
     _updateStreamSubscription.cancel();
     _previewStreamSubscription.cancel();
     _outputStreamSubscription.cancel();
@@ -266,124 +278,86 @@ class PreviewPanelState extends State<PreviewPanel>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      Column(
-        children: [
-          Row(
-            children: [
-              (editing
-                  ? TextFormField(
-                      initialValue: deckIndex?.deck.comment ?? "",
-                      decoration: InputDecoration.collapsed(
-                        hintText: deckIndex?.deck.label ?? "",
-                      ),
-                      style: Theme.of(context).primaryTextTheme.headlineSmall,
-                      onChanged: (comment) {
-                        if (deckIndex != null) {
-                          updateDeck(
-                            deckIndex!.deck.withComment(comment),
-                          );
-                        }
-                      },
-                    ).expanded()
-                  : Text(
-                      deckIndex?.deck.label ?? "Preview",
-                      style: Theme.of(context).primaryTextTheme.headlineSmall,
-                    ).expanded()),
-              Button(
-                onTap: () => setState(() => searching = true),
-                child: const Icon(
-                  CupertinoIcons.search,
-                  color: CupertinoColors.activeBlue,
-                ),
-              ).padding(const EdgeInsets.symmetric(horizontal: 4)),
-              Button(
-                onTap: () => setState(() => editing = !editing),
-                depressed: editing,
-                child: Icon(
-                  CupertinoIcons.pencil,
-                  color: editing
-                      ? CupertinoColors.darkBackgroundGray
-                      : CupertinoColors.activeBlue,
-                ),
-              ).padding(const EdgeInsets.symmetric(horizontal: 4)),
-            ],
-          ).container(
-            padding: const EdgeInsets.all(20),
-            color: CupertinoColors.darkBackgroundGray,
-          ),
-          Row(children: [
-            LayoutBuilder(builder: (context, constraints) {
-              return Column(children: [
-                (deckIndex == null
-                        ? const Text("Nothing Selected")
-                            .centered()
-                            .background(Colors.black)
-                        : LeftTabs(
-                            keepHiddenChildrenAlive: true,
-                            children: [
-                              TabEntry(
-                                icon: const Text("Preview")
-                                    .rotated(quarterTurns: 1),
-                                body: ConditionalEditingDeckPanel(
-                                  stream: outputStream.sink,
-                                  defaultSettings: programme.defaultSettings,
-                                  deckIndex: deckIndex!,
-                                  editing: editing,
-                                  onChange: updateDeck,
-                                ),
+    return Row(children: [
+      LayoutBuilder(builder: (context, constraints) {
+        return Column(children: [
+          (deckIndex == null
+                  ? const Text("Nothing Selected")
+                      .centered()
+                      .background(Colors.black)
+                  : LeftTabs(
+                      keepHiddenChildrenAlive: true,
+                      children: [
+                        TabEntry(
+                          icon: const Text("Preview").rotated(quarterTurns: 1),
+                          body: DeckPanel(
+                            deckIndex: deckIndex!,
+                            select: select,
+                          ),
+                        ),
+                        TabEntry(
+                          icon: const Text("Editor").rotated(quarterTurns: 1),
+                          body: EditingDeckPanel(
+                            stream: outputStream.sink,
+                            defaultSettings: programme.defaultSettings,
+                            deckIndex: deckIndex!,
+                            select: select,
+                            onChange: updateDeck,
+                          ),
+                        ),
+                        TabEntry(
+                          icon: const Text("Settings").rotated(quarterTurns: 1),
+                          body: Column(children: [
+                            Text(
+                              '${deckIndex?.deck.label ?? ''} Settings',
+                              style: Theme.of(context)
+                                  .primaryTextTheme
+                                  .headlineSmall,
+                            ).container(
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.all(16),
+                                color: CupertinoColors.darkBackgroundGray),
+                            OptionalDisplaySettingsPanel(
+                              displaySettings: deckIndex!.deck.displaySettings
+                                  .rebuild((builder) {
+                                for (final name
+                                    in programme.defaultSettings.keys) {
+                                  builder.putIfAbsent(
+                                    name,
+                                    () => const OptionalDisplaySettings(),
+                                  );
+                                }
+                              }),
+                              update: (settings) => updateDeck(
+                                deckIndex!.deck.withDisplaySettings(settings),
                               ),
-                              TabEntry(
-                                icon: const Text("Settings")
-                                    .rotated(quarterTurns: 1),
-                                body: OptionalDisplaySettingsPanel(
-                                  displaySettings: deckIndex!
-                                      .deck.displaySettings
-                                      .rebuild((builder) {
-                                    for (final name
-                                        in programme.defaultSettings.keys) {
-                                      builder.putIfAbsent(
-                                        name,
-                                        () => const OptionalDisplaySettings(),
-                                      );
-                                    }
-                                  }),
-                                  update: (settings) => updateDeck(
-                                    deckIndex!.deck
-                                        .withDisplaySettings(settings),
-                                  ),
-                                  defaultSettings: programme.defaultSettings,
-                                ).background(Colors.black),
-                              ),
-                            ],
-                          ))
-                    .expanded(),
-                DockedPreview(
-                  requestUpdateStreamSink: requestPreviewUpdateStream.sink,
-                  stream: outputStream.stream,
-                  defaultSettings: programme.defaultSettings,
-                  deck: deckIndex?.deck,
-                  updateDeck: updateDeck,
-                ).constrained(constraints),
-              ]);
-            }).expanded(),
-            GoLiveButtons(
-              goLive: ({required quiet}) {
-                if (deckIndex != null) {
-                  widget.liveStreamSink.add(ShowMessage(
-                    defaultSettings: programme.defaultSettings,
-                    quiet: quiet,
-                    deckIndex: deckIndex!,
-                  ));
-                }
-              },
-            ),
-          ]).expanded(),
-        ],
+                              defaultSettings: programme.defaultSettings,
+                            ).background(Colors.black).expanded(),
+                          ]),
+                        ),
+                      ],
+                    ))
+              .expanded(),
+          DockedPreview(
+            requestUpdateStreamSink: requestPreviewUpdateStream.sink,
+            stream: outputStream.stream,
+            defaultSettings: programme.defaultSettings,
+            deck: deckIndex?.deck,
+            updateDeck: updateDeck,
+          ).constrained(constraints),
+        ]);
+      }).expanded(),
+      GoLiveButtons(
+        goLive: ({required quiet}) {
+          if (deckIndex != null) {
+            widget.liveStreamSink.add(ShowMessage(
+              defaultSettings: programme.defaultSettings,
+              quiet: quiet,
+              deckIndex: deckIndex!,
+            ));
+          }
+        },
       ),
-      searching
-          ? SearchOverlay(dismiss: () => setState(() => searching = false))
-          : const SizedBox.shrink(),
     ]);
   }
 }

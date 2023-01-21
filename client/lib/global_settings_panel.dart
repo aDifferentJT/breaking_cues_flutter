@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:client/settings_controls.dart';
+import 'package:built_collection/built_collection.dart';
+import 'package:client/packed_button_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:core/deck.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
-import 'button.dart';
-import 'open_save.dart';
+import 'settings_controls.dart';
 
 class GlobalSettingsPanel extends StatefulWidget {
   final Stream<Programme> updateStream;
@@ -67,20 +67,17 @@ class _GlobalSettingsPanelState extends State<GlobalSettingsPanel> {
               style: Theme.of(context).primaryTextTheme.headlineSmall,
             ),
             const Spacer(),
-            OpenButton(onOpen: widget.updateStreamSink.add)
-                .padding(const EdgeInsets.symmetric(horizontal: 4)),
-            SaveButton(programme: programme)
-                .padding(const EdgeInsets.symmetric(horizontal: 4)),
-            const SizedBox(width: 32),
-            Button(
-              onTap: () => widget.updateStreamSink.add(
-                programme, // TODO
-              ),
-              child: const Icon(
-                CupertinoIcons.add,
-                color: CupertinoColors.activeBlue,
-              ),
-            ).padding(const EdgeInsets.symmetric(horizontal: 4)),
+            PackedButtonRow(
+              buttons: [
+                PackedButton(
+                  child: const Icon(CupertinoIcons.add)
+                      .padding(const EdgeInsets.all(4)),
+                  colour: CupertinoColors.activeBlue,
+                  onTap: () => widget.updateStreamSink.add(programme), // TODO
+                )
+              ].toBuiltList(),
+              padding: const EdgeInsets.all(1),
+            ),
           ],
         ).container(
           padding: const EdgeInsets.all(20),

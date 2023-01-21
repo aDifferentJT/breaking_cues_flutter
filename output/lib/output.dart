@@ -17,6 +17,51 @@ import 'colour_to_flutter.dart';
 import 'display_settings_flutter.dart';
 
 @immutable
+class _CountdownText extends StatelessWidget {
+  final CountdownState countdown;
+  final TextStyle textStyle;
+  final TextAlign textAlign;
+  final Color backgroundColour;
+
+  const _CountdownText(
+    this.countdown, {
+    required this.textStyle,
+    required this.textAlign,
+    required this.backgroundColour,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return countdown.isStopped
+        ? Text(
+            countdown.slide.whenStopped,
+            style: textStyle,
+            textAlign: textAlign,
+          )
+        : Text.rich(
+            TextSpan(
+              children: (countdown.slide.message.split('#'))
+                  .map((text) => TextSpan(text: text))
+                  .cast<InlineSpan>()
+                  .intersperse(
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic,
+                      child: DigitalCountdown(
+                        remaining: countdown.remaining,
+                        style: textStyle,
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+            style: textStyle,
+            textAlign: textAlign,
+          );
+  }
+}
+
+@immutable
 class _CountdownView extends StatelessWidget {
   final CountdownState countdown;
   final Color backgroundColour;
@@ -39,7 +84,6 @@ class _CountdownView extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(),
               Text(
                 countdown.slide.subtitle1,
                 style: countdown.displaySettings.bodyStyle,
@@ -59,38 +103,17 @@ class _CountdownView extends StatelessWidget {
           )
               .constrained(const BoxConstraints(maxWidth: 480))
               .intrinsicWidth()
-              .container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.all(32),
-              )
+              .padding(const EdgeInsets.all(32))
               .fractionallySized(heightFactor: 2 / 3),
-          (countdown.isStopped
-                  ? Text(
-                      countdown.slide.whenStopped,
-                      style: countdown.displaySettings.bodyStyle,
-                      textAlign: TextAlign.center,
-                    )
-                  : Text.rich(
-                      TextSpan(
-                        children: ('The service will begin in #'.split('#'))
-                            .map((text) => TextSpan(text: text))
-                            .cast<InlineSpan>()
-                            .intersperse(
-                              WidgetSpan(
-                                child: DigitalCountdown(
-                                  remaining: countdown.remaining,
-                                  style: countdown.displaySettings.bodyStyle,
-                                ),
-                              ),
-                            )
-                            .toList(growable: false),
-                      ),
-                      style: countdown.displaySettings.bodyStyle,
-                      textAlign: TextAlign.center,
-                    ))
+          _CountdownText(
+            countdown,
+            textStyle: countdown.displaySettings.bodyStyle,
+            textAlign: TextAlign.right,
+            backgroundColour: backgroundColour,
+          )
               .constrained(const BoxConstraints(maxWidth: 480))
               .container(
-                alignment: Alignment.centerRight,
+                alignment: Alignment.topRight,
                 padding: const EdgeInsets.all(32),
               )
               .fractionallySized(heightFactor: 2 / 3),
@@ -103,7 +126,7 @@ class _CountdownView extends StatelessWidget {
               .constrained(const BoxConstraints(maxWidth: 960))
               .fractionallySized(
                 alignment: Alignment.topCenter,
-                heightFactor: 1 / 2,
+                heightFactor: 1 / 3,
               )
               .positionedFill,
         ]).fractionallySized(
@@ -137,33 +160,15 @@ class _CountdownView extends StatelessWidget {
               colour: countdown.displaySettings.textColour.flutter,
             ).expanded(flex: 6),
             const Spacer(flex: 1),
-            countdown.isStopped
-                ? Text(
-                    countdown.slide.whenStopped,
-                    style: countdown.displaySettings.titleStyle,
-                    textAlign: TextAlign.center,
-                  )
-                : Text.rich(
-                    TextSpan(
-                      children: ('The service will begin in #'.split('#'))
-                          .map((text) => TextSpan(text: text))
-                          .cast<InlineSpan>()
-                          .intersperse(
-                            WidgetSpan(
-                              child: DigitalCountdown(
-                                remaining: countdown.remaining,
-                                style: countdown.displaySettings.titleStyle,
-                              ),
-                            ),
-                          )
-                          .toList(growable: false),
-                    ),
-                    style: countdown.displaySettings.titleStyle,
-                    textAlign: TextAlign.center,
-                  ),
+            _CountdownText(
+              countdown,
+              textStyle: countdown.displaySettings.titleStyle,
+              textAlign: TextAlign.center,
+              backgroundColour: backgroundColour,
+            ),
             const Spacer(flex: 1),
           ]).container(color: backgroundColour).positionedFill,
-        ]).opacity(1 /*countdown.opacity*/);
+        ]).opacity(countdown.opacity);
     }
   }
 }
@@ -212,7 +217,7 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
     _captionDecorationController.forward();
 
     _updateTimer?.cancel();
-    _updateTimer = deckIndex.slide is CountdownSlide
+    _updateTimer = deckIndex.slide is CountdownChunk
         ? Timer.periodic(
             const Duration(milliseconds: 500),
             (_) => setState(() {}),

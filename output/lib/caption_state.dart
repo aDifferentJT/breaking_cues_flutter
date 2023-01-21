@@ -49,7 +49,7 @@ List<InlineSpan> formatText(String text) {
 
 @immutable
 class CountdownState {
-  final CountdownSlide slide;
+  final CountdownChunk slide;
   final double opacity;
   final DisplaySettings displaySettings;
 
@@ -93,7 +93,7 @@ class CaptionState {
     required String name,
   }) {
     final slide = deckIndex.slide;
-    if (slide is CountdownSlide) {
+    if (slide is CountdownChunk) {
       return CaptionState.pieces(
         rrect: const RRect(
           left: 960,
@@ -187,7 +187,7 @@ class CaptionState {
               radius: 0,
             );
           case Style.topLines:
-            if (slide is TitleSlide) {
+            if (slide is TitleChunk) {
               final textHeight = textSize(
                     slide.title,
                     displaySettings.titleStyle,
@@ -231,7 +231,7 @@ class CaptionState {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }
           case Style.bottomLines:
-            if (slide is TitleSlide) {
+            if (slide is TitleChunk) {
               final textHeight = textSize(
                     slide.title,
                     displaySettings.titleStyle,
@@ -344,7 +344,7 @@ class CaptionState {
           case Style.topLines:
           case Style.bottomLines:
           case Style.bottomParagraphs:
-            if (slide is TitleSlide) {
+            if (slide is TitleChunk) {
               return BuiltMap.of({
                 RichText(
                   text: TextSpan(
@@ -391,7 +391,7 @@ class CaptionState {
           case Style.leftTwoThirds:
           case Style.rightTwoThirds:
           case Style.fullScreen:
-            if (slide is TitleSlide) {
+            if (slide is TitleChunk) {
               return BuiltMap.of({
                 RichText(
                   text: TextSpan(

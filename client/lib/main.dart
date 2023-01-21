@@ -1,16 +1,19 @@
 import 'dart:async';
+import 'dart:io';
 
-import 'package:client/global_settings_panel.dart';
-import 'package:client/left_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:core/deck.dart';
 import 'package:core/streams.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'global_settings_panel.dart';
+import 'left_tabs.dart';
 import 'live_panel.dart';
+import 'open_save.dart';
 import 'programme_panel.dart';
 import 'preview_panel.dart';
 
@@ -34,10 +37,10 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
   @override
-  createState() => MyHomePageState();
+  createState() => _MyHomePageState();
 }
 
-class MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> {
   // final streams = ClientStreams.local();
   final streams = ClientStreams.websocket(
     WebSocketChannel.connect(
@@ -47,17 +50,25 @@ class MyHomePageState extends State<MyHomePage> {
 
   final previewStream = StreamController<DeckKey?>.broadcast();
 
+  var programme = Programme.new_();
+  late final StreamSubscription<Programme> updateStreamSubscription;
+
   @override
   void initState() {
     super.initState();
+
+    updateStreamSubscription = streams.updateStream.listen(
+      (newProgramme) => setState(() => programme = newProgramme),
+    );
+
+    streams.requestUpdateStreamSink.add(null);
   }
 
   @override
   void dispose() {
-    streams.dispose();
-
+    updateStreamSubscription.cancel();
     previewStream.close();
-
+    streams.dispose();
     super.dispose();
   }
 
@@ -111,6 +122,27 @@ class MyHomePageState extends State<MyHomePage> {
           streamSink: streams.liveStreamSink,
         ).expanded(),
       ],
-    );
+    ).callbackShortcuts(bindings: {
+      SingleActivator(
+        LogicalKeyboardKey.keyN,
+        control: !(Platform.isMacOS || Platform.isIOS),
+        meta: Platform.isMacOS || Platform.isIOS,
+      ): () => streams.updateStreamSink.add(Programme.new_()),
+      SingleActivator(
+        LogicalKeyboardKey.keyO,
+        control: !(Platform.isMacOS || Platform.isIOS),
+        meta: Platform.isMacOS || Platform.isIOS,
+      ): () async {
+        var newProgramme = await open();
+        if (newProgramme != null) {
+          streams.updateStreamSink.add(newProgramme);
+        }
+      },
+      SingleActivator(
+        LogicalKeyboardKey.keyS,
+        control: !(Platform.isMacOS || Platform.isIOS),
+        meta: Platform.isMacOS || Platform.isIOS,
+      ): () => save(programme),
+    });
   }
 }

@@ -4,8 +4,6 @@ import 'package:core/music.dart';
 import 'package:meta/meta.dart';
 import 'package:petitparser/petitparser.dart';
 
-import 'parser.dart';
-
 @immutable
 class Colour {
   final int a;
@@ -316,24 +314,12 @@ class OptionalDisplaySettings {
 
 @immutable
 abstract class Slide {
-  const Slide();
-
   String get label;
-  String get editText;
 }
 
 @immutable
 abstract class Chunk {
-  const Chunk();
-
   BuiltList<Slide> get slides;
-
-  factory Chunk.parse(String text) {
-    return CountdownChunk.parse(text) ??
-        TitleChunk.parse(text) ??
-        MusicChunk._parser.end().parse(text).valueOrNull ??
-        BodyChunk.parse(text);
-  }
 
   factory Chunk.fromJson(Map<String, dynamic> json) {
     switch (json['type']) {
@@ -352,7 +338,7 @@ abstract class Chunk {
 }
 
 @immutable
-class CountdownSlide extends Slide {
+class CountdownChunk with Chunk, Slide {
   final String title;
   final String subtitle1;
   final String subtitle2;
@@ -361,7 +347,7 @@ class CountdownSlide extends Slide {
   final DateTime countdownTo;
   final Duration stopAt;
 
-  const CountdownSlide({
+  const CountdownChunk({
     required this.title,
     required this.subtitle1,
     required this.subtitle2,
@@ -371,92 +357,82 @@ class CountdownSlide extends Slide {
     required this.stopAt,
   });
 
-  @override
-  String get label =>
-      'Countdown to ${countdownTo.hour}:${countdownTo.minute}:${countdownTo.second}';
-  @override
-  String get editText => 'Countdown to ${countdownTo.toIso8601String()}\n'
-      'Title: $title\n'
-      'Subtitle 1: $subtitle1\n'
-      'Subtitle 2: $subtitle2\n'
-      'Message: $message\n'
-      'After ${stopAt.inSeconds}s show: $whenStopped';
-
-  @override
-  bool operator ==(Object other) {
-    return other is CountdownSlide && hashCode == other.hashCode;
+  static CountdownChunk get default_ {
+    final now = DateTime.now();
+    return CountdownChunk(
+      title: 'Title',
+      subtitle1: 'Subtitle 1',
+      subtitle2: 'Subtitle 2',
+      message: 'The service will begin in #',
+      whenStopped: 'The service will begin shortly',
+      countdownTo: DateTime(now.year, now.month, now.day, now.hour + 1),
+      stopAt: const Duration(minutes: 1),
+    );
   }
 
-  @override
-  int get hashCode => Object.hash(
-        title,
-        subtitle1,
-        subtitle2,
-        message,
-        whenStopped,
-        countdownTo,
-        stopAt,
+  CountdownChunk withTitle(String title) => CountdownChunk(
+        title: title,
+        subtitle1: subtitle1,
+        subtitle2: subtitle2,
+        message: message,
+        whenStopped: whenStopped,
+        countdownTo: countdownTo,
+        stopAt: stopAt,
       );
-}
-
-@immutable
-class CountdownChunk extends Chunk {
-  final CountdownSlide slide;
-
-  CountdownChunk({
-    required String title,
-    required String subtitle1,
-    required String subtitle2,
-    required String message,
-    required DateTime countdownTo,
-    required Duration stopAt,
-    required String whenStopped,
-  }) : slide = CountdownSlide(
-          title: title,
-          subtitle1: subtitle1,
-          subtitle2: subtitle2,
-          message: message,
-          whenStopped: whenStopped,
-          countdownTo: countdownTo,
-          stopAt: stopAt,
-        );
-
-  static CountdownChunk? parse(String text) {
-    if (text.toLowerCase() == 'countdown') {
-      return CountdownChunk(
-        title: 'Title',
-        subtitle1: 'Subtitle 1',
-        subtitle2: 'Subtitle 2',
-        message: 'The service will begin in #',
-        whenStopped: 'The service will begin shortly',
-        countdownTo: DateTime(1970),
-        stopAt: const Duration(minutes: 1),
+  CountdownChunk withSubtitle1(String subtitle1) => CountdownChunk(
+        title: title,
+        subtitle1: subtitle1,
+        subtitle2: subtitle2,
+        message: message,
+        whenStopped: whenStopped,
+        countdownTo: countdownTo,
+        stopAt: stopAt,
       );
-    } else {
-      final match = RegExp(
-        '^Countdown to (.*)\n'
-        'Title: (.*)\n'
-        'Subtitle 1: (.*)\n'
-        'Subtitle 2: (.*)\n'
-        'Message: (.*)\n'
-        'After ([0-9]*)s show: (.*)\$',
-      ).matchAsPrefix(text);
-      if (match != null) {
-        return CountdownChunk(
-          title: match.group(2) ?? '',
-          subtitle1: match.group(3) ?? '',
-          subtitle2: match.group(4) ?? '',
-          message: match.group(5) ?? '',
-          countdownTo:
-              DateTime.tryParse(match.group(1) ?? '') ?? DateTime(1970),
-          stopAt: Duration(seconds: int.tryParse(match.group(6) ?? '') ?? 60),
-          whenStopped: match.group(7) ?? '',
-        );
-      } else {
-        return null;
-      }
-    }
-  }
+  CountdownChunk withSubtitle2(String subtitle2) => CountdownChunk(
+        title: title,
+        subtitle1: subtitle1,
+        subtitle2: subtitle2,
+        message: message,
+        whenStopped: whenStopped,
+        countdownTo: countdownTo,
+        stopAt: stopAt,
+      );
+  CountdownChunk withMessage(String message) => CountdownChunk(
+        title: title,
+        subtitle1: subtitle1,
+        subtitle2: subtitle2,
+        message: message,
+        whenStopped: whenStopped,
+        countdownTo: countdownTo,
+        stopAt: stopAt,
+      );
+  CountdownChunk withWhenStopped(String whenStopped) => CountdownChunk(
+        title: title,
+        subtitle1: subtitle1,
+        subtitle2: subtitle2,
+        message: message,
+        whenStopped: whenStopped,
+        countdownTo: countdownTo,
+        stopAt: stopAt,
+      );
+  CountdownChunk withCountdownTo(DateTime countdownTo) => CountdownChunk(
+        title: title,
+        subtitle1: subtitle1,
+        subtitle2: subtitle2,
+        message: message,
+        whenStopped: whenStopped,
+        countdownTo: countdownTo,
+        stopAt: stopAt,
+      );
+  CountdownChunk withStopAt(Duration stopAt) => CountdownChunk(
+        title: title,
+        subtitle1: subtitle1,
+        subtitle2: subtitle2,
+        message: message,
+        whenStopped: whenStopped,
+        countdownTo: countdownTo,
+        stopAt: stopAt,
+      );
 
   CountdownChunk.fromJson(Map<String, dynamic> json)
       : this(
@@ -472,66 +448,59 @@ class CountdownChunk extends Chunk {
   @override
   Map<String, dynamic> toJson() => {
         'type': 'countdown',
-        'title': slide.title,
-        'subtitle1': slide.subtitle1,
-        'subtitle2': slide.subtitle2,
-        'message': slide.message,
-        'countdownTo': slide.countdownTo.toIso8601String(),
-        'stopAt': slide.stopAt.inMicroseconds,
-        'whenStopped': slide.whenStopped,
+        'title': title,
+        'subtitle1': subtitle1,
+        'subtitle2': subtitle2,
+        'message': message,
+        'countdownTo': countdownTo.toIso8601String(),
+        'stopAt': stopAt.inMicroseconds,
+        'whenStopped': whenStopped,
       };
 
   @override
-  BuiltList<Slide> get slides => BuiltList([slide]);
+  BuiltList<Slide> get slides => BuiltList([this]);
+
+  @override
+  String get label => 'Countdown to '
+      '${countdownTo.hour.toString().padLeft(2, '0')}:'
+      '${countdownTo.minute.toString().padLeft(2, '0')}:'
+      '${countdownTo.second.toString().padLeft(2, '0')}';
 
   @override
   bool operator ==(Object other) {
-    return other is CountdownChunk && hashCode == other.hashCode;
+    return other is CountdownChunk &&
+        title == other.title &&
+        subtitle1 == other.subtitle1 &&
+        subtitle2 == other.subtitle2 &&
+        message == other.message &&
+        whenStopped == other.whenStopped &&
+        countdownTo == other.countdownTo &&
+        stopAt == other.stopAt;
   }
 
   @override
-  int get hashCode => slide.hashCode;
+  int get hashCode => Object.hash(
+        title,
+        subtitle1,
+        subtitle2,
+        message,
+        whenStopped,
+        countdownTo,
+        stopAt,
+      );
 }
 
 @immutable
-class TitleSlide extends Slide {
+class TitleChunk with Chunk, Slide {
   final String title;
   final String subtitle;
 
-  const TitleSlide({required this.title, required this.subtitle});
+  const TitleChunk({required this.title, required this.subtitle});
 
-  @override
-  String get label => '$title\n$subtitle';
-  @override
-  String get editText => '#$title\n#$subtitle';
-
-  @override
-  bool operator ==(Object other) {
-    return other is TitleSlide && hashCode == other.hashCode;
-  }
-
-  @override
-  int get hashCode => Object.hash(title, subtitle);
-}
-
-@immutable
-class TitleChunk extends Chunk {
-  final TitleSlide slide;
-
-  TitleChunk({required String title, required String subtitle})
-      : slide = TitleSlide(title: title, subtitle: subtitle);
-
-  static TitleChunk? parse(String text) {
-    final match = RegExp('^#(.*)(\n#(.*))?\$').matchAsPrefix(text);
-    if (match != null) {
-      return TitleChunk(
-        title: match.group(1) ?? '',
-        subtitle: match.group(3) ?? '',
-      );
-    } else {
-      return null;
-    }
-  }
+  TitleChunk withTitle(String title) =>
+      TitleChunk(title: title, subtitle: subtitle);
+  TitleChunk withSubtitle(String subtitle) =>
+      TitleChunk(title: title, subtitle: subtitle);
 
   TitleChunk.fromJson(Map<String, dynamic> json)
       : this(
@@ -542,24 +511,29 @@ class TitleChunk extends Chunk {
   @override
   Map<String, dynamic> toJson() => {
         'type': 'title',
-        'title': slide.title,
-        'subtitle': slide.subtitle,
+        'title': title,
+        'subtitle': subtitle,
       };
 
   @override
-  BuiltList<Slide> get slides => BuiltList([slide]);
+  BuiltList<Slide> get slides => BuiltList([this]);
+
+  @override
+  String get label => '$title\n$subtitle';
 
   @override
   bool operator ==(Object other) {
-    return other is TitleChunk && hashCode == other.hashCode;
+    return other is TitleChunk &&
+        title == other.title &&
+        subtitle == other.subtitle;
   }
 
   @override
-  int get hashCode => slide.hashCode;
+  int get hashCode => Object.hash(title, subtitle);
 }
 
 @immutable
-class BodySlide extends Slide {
+class BodySlide with Slide {
   final BuiltList<String> minorChunks;
   final int minorIndex;
 
@@ -569,15 +543,18 @@ class BodySlide extends Slide {
 
   @override
   String get label => minorChunk;
-  @override
-  String get editText => minorChunk;
 }
 
 @immutable
-class BodyChunk extends Chunk {
+class BodyChunk with Chunk {
   final BuiltList<String> minorChunks;
 
   const BodyChunk({required this.minorChunks});
+
+  BodyChunk withMinorChunks(BuiltList<String> minorChunks) =>
+      BodyChunk(minorChunks: minorChunks);
+  BodyChunk rebuildMinorChunks(void Function(ListBuilder<String>) updates) =>
+      BodyChunk(minorChunks: minorChunks.rebuild(updates));
 
   BodyChunk.parse(String text)
       : this(minorChunks: text.split('\n\n').toBuiltList());
@@ -600,7 +577,7 @@ class BodyChunk extends Chunk {
 
   @override
   bool operator ==(Object other) {
-    return other is TitleChunk && hashCode == other.hashCode;
+    return other is BodyChunk && minorChunks == other.minorChunks;
   }
 
   @override
@@ -608,7 +585,7 @@ class BodyChunk extends Chunk {
 }
 
 @immutable
-class MusicSlide extends Slide {
+class MusicSlide with Slide {
   final BuiltList<Stave> minorChunks;
   final int minorIndex;
 
@@ -618,17 +595,18 @@ class MusicSlide extends Slide {
 
   @override
   String get label => minorChunk.lyrics;
-  @override
-  String get editText => 'Music: ${minorChunk.editText}';
 }
 
 @immutable
-class MusicChunk extends Chunk {
+class MusicChunk with Chunk {
   final BuiltList<Stave> minorChunks;
 
   const MusicChunk({required this.minorChunks});
 
-  static final Parser<MusicChunk> _parser =
+  MusicChunk withMinorChunks(BuiltList<Stave> minorChunks) =>
+      MusicChunk(minorChunks: minorChunks);
+
+  static final Parser<MusicChunk> parser =
       SequenceParser2('Music: '.toParser(), Stave.parser)
           .map2((_, stave) => stave)
           .plusSeparated('\n\n'.toParser())
@@ -659,7 +637,7 @@ class MusicChunk extends Chunk {
 
   @override
   bool operator ==(Object other) {
-    return other is TitleChunk && hashCode == other.hashCode;
+    return other is MusicChunk && minorChunks == other.minorChunks;
   }
 
   @override
@@ -699,16 +677,6 @@ class Deck {
   })  : displaySettings = displaySettings ?? BuiltMap(),
         chunks = chunks ?? BuiltList();
 
-  Deck.parse(
-      {required this.key,
-      required this.displaySettings,
-      required this.comment,
-      required String text})
-      : chunks = text
-            .split('\n\n\n')
-            .map((slideText) => Chunk.parse(slideText))
-            .toBuiltList();
-
   Deck.fromJson(Map<String, dynamic> json)
       : key = DeckKey(json['key']),
         displaySettings = BuiltMap.of(
@@ -731,10 +699,6 @@ class Deck {
         'comment': comment,
         'chunks': chunks.map((chunk) => chunk.toJson()).toList(growable: false),
       };
-
-  String get editText => chunks
-      .map((chunk) => chunk.slides.map((slide) => slide.editText).join('\n\n'))
-      .join('\n\n\n');
 
   String get label {
     if (comment != '') {
@@ -765,9 +729,23 @@ class Deck {
         chunks: chunks,
       );
 
+  Deck withChunks(BuiltList<Chunk> chunks) => Deck(
+        key: key,
+        displaySettings: displaySettings,
+        comment: comment,
+        chunks: chunks,
+      );
+
+  Deck rebuildChunks(void Function(ListBuilder<Chunk>) updates) => Deck(
+        key: key,
+        displaySettings: displaySettings,
+        comment: comment,
+        chunks: chunks.rebuild(updates),
+      );
+
   @override
   bool operator ==(Object other) {
-    return other is Deck && hashCode == other.hashCode;
+    return other is Deck && chunks == other.chunks;
   }
 
   @override
@@ -823,11 +801,11 @@ class DeckIndex {
   Slide get slide {
     if (index.chunk < deck.chunks.length) {
       final chunk = deck.chunks[index.chunk];
-      if (index.slide < chunk.slides.length) {
+      if (index.slide >= 0 && index.slide < chunk.slides.length) {
         return chunk.slides[index.slide];
       }
     }
-    return const TitleSlide(title: '', subtitle: '');
+    return const TitleChunk(title: '', subtitle: '');
   }
 
   DeckIndex withDeck(Deck deck) => DeckIndex(deck: deck, index: index);
@@ -905,6 +883,8 @@ class Programme {
 
   Programme withDecks(BuiltList<Deck> decks) =>
       Programme(defaultSettings: defaultSettings, decks: decks);
+  Programme mapDecks(BuiltList<Deck> Function(BuiltList<Deck>) f) =>
+      Programme(defaultSettings: defaultSettings, decks: f(decks));
 
   Programme withDefaultSettings(
           BuiltMap<String, DisplaySettings> defaultSettings) =>

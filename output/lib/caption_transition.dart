@@ -47,7 +47,7 @@ class MapTween<K, V> extends Animatable<BuiltMap<K, V>> {
 
 @immutable
 class CountdownTween extends Animatable<CountdownState> {
-  final StepAnimatable<CountdownSlide> slide;
+  final StepAnimatable<CountdownChunk> slide;
   final Tween<double> opacity;
   final StepAnimatable<DisplaySettings> displaySettings;
 

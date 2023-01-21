@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 
 import 'package:core/deck.dart';
 import 'package:core/message.dart';
@@ -46,6 +45,19 @@ class LivePanelState extends State<LivePanel> {
     }
   }
 
+  void select(Index index) {
+    if (deckIndex != null) {
+      widget.streamSink.add(ShowMessage(
+        defaultSettings: defaultSettings,
+        quiet: true,
+        deckIndex: DeckIndex(
+          deck: deckIndex!.deck,
+          index: index,
+        ),
+      ));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -73,17 +85,6 @@ class LivePanelState extends State<LivePanel> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          deckIndex?.deck.label ?? "Live",
-          style: Theme.of(context).primaryTextTheme.headlineSmall,
-        )
-            .sized(
-              width: double.infinity,
-            )
-            .container(
-              padding: const EdgeInsets.all(20),
-              color: CupertinoColors.darkBackgroundGray,
-            ),
         Row(children: [
           LayoutBuilder(builder: (context, constraints) {
             return Column(children: [
@@ -92,9 +93,8 @@ class LivePanelState extends State<LivePanel> {
                           .centered()
                           .background(Colors.black)
                       : DeckPanel(
-                          stream: widget.streamSink,
-                          defaultSettings: defaultSettings,
                           deckIndex: deckIndex!,
+                          select: select,
                         ))
                   .expanded(),
               DockedPreview(

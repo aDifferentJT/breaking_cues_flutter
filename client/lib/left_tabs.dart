@@ -59,10 +59,8 @@ class _LeftTabsState extends State<LeftTabs> {
               ? Stack(
                   children: widget.children
                       .mapIndexed(
-                        (index, tabEntry) => Offstage(
-                          offstage: index != selected,
-                          child: tabEntry.body,
-                        ),
+                        (index, tabEntry) =>
+                            tabEntry.body.offstage(index != selected),
                       )
                       .toList(growable: false),
                 )
