@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart' as collection;
 
@@ -19,4 +21,14 @@ extension IterableUtils<T> on Iterable<T> {
 
   T? maxBy<S>(S Function(T) orderBy, {int Function(S, S)? compare}) =>
       collection.maxBy(this, orderBy, compare: compare);
+}
+
+extension ListUtils<T> on List<T> {
+  List<T> safeSublist(int start, [int? end]) =>
+      sublist(max(start, 0), end == null ? null : min(end, length));
+}
+
+extension BuiltListUtils<T> on BuiltList<T> {
+  BuiltList<T> safeSublist(int start, [int? end]) =>
+      sublist(max(start, 0), end == null ? null : min(end, length));
 }

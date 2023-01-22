@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:client/fetch_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -13,7 +13,6 @@ import 'deck_panel.dart';
 import 'docked_preview.dart';
 import 'left_tabs.dart';
 import 'settings_controls.dart';
-import 'suggestor.dart';
 
 class GoLiveButtons extends StatelessWidget {
   final void Function({required bool quiet}) goLive;
@@ -70,67 +69,6 @@ class GoLiveButtons extends StatelessWidget {
             .expanded(flex: 2),
       ],
     ).sized(width: 75);
-  }
-}
-
-class SearchOverlay extends StatefulWidget {
-  const SearchOverlay({super.key, required this.dismiss});
-
-  final void Function() dismiss;
-
-  @override
-  SearchOverlayState createState() => SearchOverlayState();
-}
-
-class SearchOverlayState extends State<SearchOverlay> {
-  final searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-
-    searchController.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Stack(
-          children: [
-            GestureDetector(onTap: widget.dismiss),
-            Column(children: [
-              CupertinoSearchTextField(controller: searchController),
-              ...suggestor.results(searchController.text).map(
-                    (suggestion) => Text(suggestion.title).container(
-                      padding: const EdgeInsets.all(10),
-                      color: Colors.black,
-                    ),
-                  ),
-              ...suggestor.completions(searchController.text).map(
-                    (completion) => Text("$completion...")
-                        .container(
-                          padding: const EdgeInsets.all(10),
-                          color: Colors.black,
-                        )
-                        .gestureDetector(
-                            onTap: () => setState(
-                                () => searchController.text = completion)),
-                  ),
-            ]).padding(const EdgeInsets.all(25)),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -303,6 +241,13 @@ class PreviewPanelState extends State<PreviewPanel>
                             deckIndex: deckIndex!,
                             select: select,
                             onChange: updateDeck,
+                          ),
+                        ),
+                        TabEntry(
+                          icon: const Text("Fetch").rotated(quarterTurns: 1),
+                          body: FetchPanel(
+                            deckKey: deckIndex!.deck.key,
+                            updateDeck: updateDeck,
                           ),
                         ),
                         TabEntry(

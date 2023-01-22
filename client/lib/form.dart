@@ -1,4 +1,5 @@
 import 'package:built_collection/built_collection.dart';
+import 'package:client/packed_button_row.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
@@ -30,9 +31,12 @@ class _InputState<T> extends State<_Input<T>> {
           ._input(
             context: context,
             value: widget.value,
-            onChange: widget.onChange,
-            setInvalid: (newIsInvalid) =>
-                setState(() => isInvalid = newIsInvalid),
+            onChange: (newValue) {
+              setState(() => isInvalid = newValue == null);
+              if (newValue != null) {
+                widget.onChange(newValue);
+              }
+            },
           )
           .expanded(),
       const Icon(
@@ -54,8 +58,7 @@ abstract class BCFormField<T> {
   Widget _input({
     required BuildContext context,
     required T value,
-    required void Function(T) onChange,
-    required void Function(bool) setInvalid,
+    required void Function(T?) onChange,
   });
 
   TableRow buildRow({
@@ -76,26 +79,16 @@ abstract class BCFormField<T> {
 }
 
 @immutable
-abstract class BCTypedFormField<T, U> extends BCFormField<T> {
-  final U Function(T) getter;
-  final T? Function(U) Function(T) setter;
-
-  const BCTypedFormField({
-    required super.label,
-    required this.getter,
-    required this.setter,
-  });
-}
-
-@immutable
-class BCTextFormField<T> extends BCTypedFormField<T, String> {
+class BCTextFormField<T> extends BCFormField<T> {
+  final String Function(T) getter;
+  final T? Function(String) Function(T) setter;
   final bool autofocus;
   final void Function()? onTap;
 
   const BCTextFormField({
     required super.label,
-    required super.getter,
-    required super.setter,
+    required this.getter,
+    required this.setter,
     this.autofocus = false,
     this.onTap,
   });
@@ -104,8 +97,7 @@ class BCTextFormField<T> extends BCTypedFormField<T, String> {
   Widget _input({
     required BuildContext context,
     required T value,
-    required void Function(T) onChange,
-    required void Function(bool) setInvalid,
+    required void Function(T?) onChange,
   }) {
     return CupertinoTextFormFieldRow(
       padding: const EdgeInsets.all(2),
@@ -113,16 +105,100 @@ class BCTextFormField<T> extends BCTypedFormField<T, String> {
       style: Theme.of(context).textTheme.bodyMedium,
       autofocus: autofocus,
       maxLines: null,
-      onChanged: (text) {
-        final newValue = setter(value)(text);
-        setInvalid(newValue == null);
-        if (newValue != null) {
-          onChange(newValue);
-        }
-      },
+      onChanged: (text) => onChange(setter(value)(text)),
       onTap: onTap,
       cursorColor: Colors.white,
     );
+  }
+}
+
+@immutable
+class BCIntFormField<T> extends BCTextFormField<T> {
+  BCIntFormField({
+    required super.label,
+    required int Function(T) getter,
+    required T Function(int) Function(T) setter,
+    super.autofocus = false,
+    super.onTap,
+  }) : super(
+          getter: (value) => getter(value).toString(),
+          setter: (value) => (text) {
+            final x = int.tryParse(text);
+            if (x == null) {
+              return null;
+            }
+            return setter(value)(x);
+          },
+        );
+}
+
+@immutable
+class BCRadioOption<U> {
+  final U value;
+  final Widget child;
+  final Color colour;
+
+  const BCRadioOption({
+    required this.value,
+    required this.child,
+    required this.colour,
+  });
+}
+
+@immutable
+class BCTickBoxFormField<T> extends BCFormField<T> {
+  final bool Function(T) getter;
+  final T? Function(bool) Function(T) setter;
+
+  const BCTickBoxFormField({
+    required super.label,
+    required this.getter,
+    required this.setter,
+  });
+
+  @override
+  Widget _input({
+    required BuildContext context,
+    required T value,
+    required void Function(T?) onChange,
+  }) {
+    return Checkbox(
+      value: getter(value),
+      onChanged: (ticked) => onChange(setter(value)(ticked ?? getter(value))),
+    ).aligned(AlignmentDirectional.centerStart);
+  }
+}
+
+@immutable
+class BCRadioFormField<T, U> extends BCFormField<T> {
+  final U Function(T) getter;
+  final T? Function(U) Function(T) setter;
+  final BuiltList<BCRadioOption<U>> options;
+
+  const BCRadioFormField({
+    required super.label,
+    required this.getter,
+    required this.setter,
+    required this.options,
+  });
+
+  @override
+  Widget _input({
+    required BuildContext context,
+    required T value,
+    required void Function(T?) onChange,
+  }) {
+    return PackedButtonRow(
+        buttons: options
+            .map(
+              (option) => PackedButton(
+                child: option.child,
+                colour: option.colour,
+                filled: option.value == getter(value),
+                onTap: () => onChange(setter(value)(option.value)),
+              ),
+            )
+            .toBuiltList());
   }
 }
 
