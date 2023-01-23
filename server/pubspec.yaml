@@ -10,6 +10,7 @@ dependencies:
   core:
     path: ../core
   args: ^2.0.0
+  path: ^1.8.3
   shelf: ^1.1.0
   shelf_router: ^1.0.0
   shelf_static: ^1.1.1

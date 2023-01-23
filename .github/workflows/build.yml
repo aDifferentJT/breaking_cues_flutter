@@ -1,0 +1,80 @@
+name: Breaking Cues CI
+on: [push]
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Build release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest] 
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: sudo apt-get install ninja-build libgtk-3-dev
+    - run: flutter doctor
+    - name: Install client dependencies
+      working-directory: ./client
+      run: flutter pub get
+    - name: Install output dependencies
+      working-directory: ./output
+      run: flutter pub get
+    - name: Install server dependencies
+      working-directory: ./server
+      run: dart pub get
+    - name: Build macOS client
+      if: runner.os == 'macOS'
+      working-directory: ./client
+      run: flutter build macos --release
+    - name: Build Linux client
+      if: runner.os == 'Linux'
+      working-directory: ./client
+      env:
+        CMAKE_MAKE_PROGRAM: make
+      run: flutter build linux --release
+    - name: Build Windows client
+      if: runner.os == 'Windows'
+      working-directory: ./client
+      run: flutter build windows --release
+    - name: Build output
+      working-directory: ./output
+      run: flutter build web --release
+    - name: Make server build directory
+      working-directory: ./server
+      run: mkdir build
+    - name: Build server
+      working-directory: ./server
+      run: dart compile exe -o ./build/server ./bin/server.dart
+    - name: Copy output web to server
+      run: cp -r ./output/build/web ./server/build/output
+    - name: Upload macOS Client Artefact
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ runner.os }}-client
+        path: ./client/build/macos/Build/Products/Release
+    - name: Upload Linux Client Artefact
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ runner.os }}-client
+        path: ./client/build/linux/x64/release/bundle
+    - name: Upload Windows Client Artefact
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ runner.os }}-client
+        path: ./client/build/windows/runner/Release
+    - name: Upload Server Artefact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ runner.os }}-server
+        path: ./server/build

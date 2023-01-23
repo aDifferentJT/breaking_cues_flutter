@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_static/shelf_static.dart';
@@ -11,7 +12,7 @@ void main(List<String> args) async {
   final ip = InternetAddress.anyIPv4;
 
   final outputHandler = createStaticHandler(
-    '../output/build/web',
+    join(dirname(Platform.resolvedExecutable), 'output'),
     defaultDocument: 'index.html',
   );
 
