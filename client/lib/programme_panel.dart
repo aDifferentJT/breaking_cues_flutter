@@ -8,6 +8,7 @@ import 'package:core/deck.dart';
 import 'package:core/message.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
 import 'packed_button_row.dart';
 import 'open_save.dart';
 
@@ -38,13 +39,17 @@ class ProgrammeRowButtons extends StatelessWidget {
         PackedButton(
           child: const Icon(CupertinoIcons.delete_solid)
               .padding(const EdgeInsets.all(1)),
-          colour: CupertinoColors.destructiveRed,
+          colour: ColourPalette.of(context).danger,
+          filledChildColour: ColourPalette.of(context).background,
           onTap: delete,
         ),
         PackedButton(
           child: const Icon(CupertinoIcons.arrow_up_arrow_down)
               .padding(const EdgeInsets.all(1)),
-          colour: selected ? Colors.black : CupertinoColors.activeBlue,
+          colour: selected
+              ? ColourPalette.of(context).background
+              : ColourPalette.of(context).active,
+          filledChildColour: ColourPalette.of(context).background,
           wrapper: (child) => ReorderableDragStartListener(
             index: rowIndex,
             child: child,
@@ -53,8 +58,9 @@ class ProgrammeRowButtons extends StatelessWidget {
         PackedButton(
           child:
               const Icon(CupertinoIcons.film).padding(const EdgeInsets.all(1)),
-          colour: Colors.red,
+          colour: ColourPalette.of(context).danger,
           filled: isLive,
+          filledChildColour: ColourPalette.of(context).background,
           onTap: isLive ? closeLive : goLive,
         ),
       ].toBuiltList(),
@@ -90,8 +96,8 @@ class ProgrammeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      const Divider(
-        color: CupertinoColors.darkBackgroundGray,
+      Divider(
+        color: ColourPalette.of(context).secondaryBackground,
         height: 0,
         thickness: 1,
       ),
@@ -110,11 +116,13 @@ class ProgrammeRow extends StatelessWidget {
       ])
           .container(
             padding: const EdgeInsets.all(10),
-            color: selected ? CupertinoColors.activeBlue : Colors.black,
+            color: selected
+                ? ColourPalette.of(context).active
+                : ColourPalette.of(context).background,
           )
           .gestureDetector(onTap: onSelect),
-      const Divider(
-        color: CupertinoColors.darkBackgroundGray,
+      Divider(
+        color: ColourPalette.of(context).secondaryBackground,
         height: 0,
         thickness: 1,
       ),
@@ -212,7 +220,7 @@ class ProgrammePanelState extends State<ProgrammePanel> {
           children: [
             Text(
               "Programme",
-              style: Theme.of(context).primaryTextTheme.headlineSmall,
+              style: ColourPalette.of(context).headingStyle,
             ),
             const Spacer(),
             PackedButtonRow(
@@ -220,13 +228,17 @@ class ProgrammePanelState extends State<ProgrammePanel> {
                 PackedButton(
                   child: const Icon(CupertinoIcons.doc)
                       .padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
+                  filledChildColour:
+                      ColourPalette.of(context).secondaryBackground,
                   onTap: () => widget.updateStreamSink.add(Programme.new_()),
                 ),
                 PackedButton(
                   child: const Icon(CupertinoIcons.folder_open)
                       .padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
+                  filledChildColour:
+                      ColourPalette.of(context).secondaryBackground,
                   onTap: () async {
                     var programme = await open();
                     if (programme != null) {
@@ -237,7 +249,9 @@ class ProgrammePanelState extends State<ProgrammePanel> {
                 PackedButton(
                   child: const Icon(CupertinoIcons.floppy_disk)
                       .padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
+                  filledChildColour:
+                      ColourPalette.of(context).secondaryBackground,
                   onTap: () => save(programme),
                 ),
               ].toBuiltList(),
@@ -249,7 +263,9 @@ class ProgrammePanelState extends State<ProgrammePanel> {
                 PackedButton(
                   child: const Icon(CupertinoIcons.add)
                       .padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
+                  filledChildColour:
+                      ColourPalette.of(context).secondaryBackground,
                   onTap: () => widget.updateStreamSink.add(
                     programme.withDecks(
                       programme.decks.rebuild((builder) {
@@ -273,11 +289,11 @@ class ProgrammePanelState extends State<ProgrammePanel> {
           ],
         ).container(
           padding: const EdgeInsets.all(20),
-          color: CupertinoColors.darkBackgroundGray,
+          color: ColourPalette.of(context).secondaryBackground,
         ),
         Expanded(
           child: Container(
-            color: Colors.black,
+            color: ColourPalette.of(context).background,
             child: ReorderableList(
               onReorder: (oldIndex, newIndex) {
                 setState(() {

@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
 import 'deck.dart';
-import 'string_utils.dart';
 
 @immutable
 class BibleParams {

@@ -8,23 +8,24 @@ import 'package:flutter/cupertino.dart';
 import 'package:core/deck.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
 import 'settings_controls.dart';
 
-class GlobalSettingsPanel extends StatefulWidget {
+class OutputSettingsPanel extends StatefulWidget {
   final Stream<Programme> updateStream;
   final StreamSink<Programme> updateStreamSink;
 
-  const GlobalSettingsPanel({
+  const OutputSettingsPanel({
     super.key,
     required this.updateStream,
     required this.updateStreamSink,
   });
 
   @override
-  createState() => _GlobalSettingsPanelState();
+  createState() => _OutputSettingsPanelState();
 }
 
-class _GlobalSettingsPanelState extends State<GlobalSettingsPanel> {
+class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
   var programme = Programme.new_();
   var selected = '';
 
@@ -41,7 +42,7 @@ class _GlobalSettingsPanelState extends State<GlobalSettingsPanel> {
   }
 
   @override
-  void didUpdateWidget(covariant GlobalSettingsPanel oldWidget) {
+  void didUpdateWidget(covariant OutputSettingsPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (widget.updateStream != oldWidget.updateStream) {
@@ -62,17 +63,16 @@ class _GlobalSettingsPanelState extends State<GlobalSettingsPanel> {
       children: [
         Row(
           children: [
-            Text(
-              "Settings",
-              style: Theme.of(context).primaryTextTheme.headlineSmall,
-            ),
+            Text("Settings", style: ColourPalette.of(context).headingStyle),
             const Spacer(),
             PackedButtonRow(
               buttons: [
                 PackedButton(
                   child: const Icon(CupertinoIcons.add)
                       .padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
+                  filledChildColour:
+                      ColourPalette.of(context).secondaryBackground,
                   onTap: () => widget.updateStreamSink.add(programme), // TODO
                 )
               ].toBuiltList(),
@@ -81,18 +81,13 @@ class _GlobalSettingsPanelState extends State<GlobalSettingsPanel> {
           ],
         ).container(
           padding: const EdgeInsets.all(20),
-          color: CupertinoColors.darkBackgroundGray,
+          color: ColourPalette.of(context).secondaryBackground,
         ),
-        Expanded(
-          child: Container(
-            color: Colors.black,
-            child: DisplaySettingsPanel(
-              displaySettings: programme.defaultSettings,
-              update: (settings) => widget.updateStreamSink
-                  .add(programme.withDefaultSettings(settings)),
-            ),
-          ),
-        ),
+        DisplaySettingsPanel(
+          displaySettings: programme.defaultSettings,
+          update: (settings) => widget.updateStreamSink
+              .add(programme.withDefaultSettings(settings)),
+        ).background(ColourPalette.of(context).background).expanded(),
       ],
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
@@ -12,6 +13,7 @@ import 'package:core/message.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
 import 'form.dart';
 import 'packed_button_row.dart';
 
@@ -30,7 +32,7 @@ class DeckPanel extends StatelessWidget {
     return Column(children: [
       Text(
         deckIndex.deck.label,
-        style: Theme.of(context).primaryTextTheme.headlineSmall,
+        style: ColourPalette.of(context).headingStyle,
       ).container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.all(16),
@@ -48,27 +50,27 @@ class DeckPanel extends StatelessWidget {
                               color:
                                   Index(chunk: chunkIndex, slide: slideIndex) ==
                                           deckIndex.index
-                                      ? CupertinoColors.activeBlue
-                                      : Colors.black,
+                                      ? ColourPalette.of(context).active
+                                      : ColourPalette.of(context).background,
                             )
                             .gestureDetector(onTap: () => select(index)),
-                        const Divider(
-                          color: CupertinoColors.darkBackgroundGray,
+                        Divider(
+                          color: ColourPalette.of(context).secondaryBackground,
                           height: 0,
                           thickness: 1,
                         ),
                       ];
                     },
                   ),
-                  const Divider(
-                    color: CupertinoColors.darkBackgroundGray,
+                  Divider(
+                    color: ColourPalette.of(context).secondaryBackground,
                     height: 8,
                     thickness: 8,
                   ),
                 ])
             .toList(growable: false),
       ).expanded(),
-    ]).background(CupertinoColors.darkBackgroundGray);
+    ]).background(ColourPalette.of(context).secondaryBackground);
   }
 }
 
@@ -86,15 +88,17 @@ class _ChunkTypeRadio extends StatelessWidget {
         PackedButton(
           child:
               const Icon(CupertinoIcons.clock).padding(const EdgeInsets.all(1)),
-          colour: CupertinoColors.activeBlue,
+          colour: ColourPalette.of(context).active,
           filled: chunk is CountdownChunk,
+          filledChildColour: ColourPalette.of(context).secondaryBackground,
           onTap: () => onChangeChunk(CountdownChunk.default_),
         ),
         PackedButton(
           child: const Icon(CupertinoIcons.textformat)
               .padding(const EdgeInsets.all(1)),
-          colour: CupertinoColors.activeBlue,
+          colour: ColourPalette.of(context).active,
           filled: chunk is TitleChunk,
+          filledChildColour: ColourPalette.of(context).secondaryBackground,
           onTap: () => onChangeChunk(
             const TitleChunk(title: 'Title', subtitle: 'Subtitle'),
           ),
@@ -102,8 +106,9 @@ class _ChunkTypeRadio extends StatelessWidget {
         PackedButton(
           child: const Icon(CupertinoIcons.text_aligncenter)
               .padding(const EdgeInsets.all(1)),
-          colour: CupertinoColors.activeBlue,
+          colour: ColourPalette.of(context).active,
           filled: chunk is BodyChunk,
+          filledChildColour: ColourPalette.of(context).secondaryBackground,
           onTap: () => onChangeChunk(
             BodyChunk(minorChunks: [''].toBuiltList()),
           ),
@@ -111,8 +116,9 @@ class _ChunkTypeRadio extends StatelessWidget {
         PackedButton(
           child: const Icon(CupertinoIcons.music_note_2)
               .padding(const EdgeInsets.all(1)),
-          colour: CupertinoColors.activeBlue,
+          colour: ColourPalette.of(context).active,
           filled: chunk is MusicChunk,
+          filledChildColour: ColourPalette.of(context).secondaryBackground,
           onTap: () => onChangeChunk(
             MusicChunk(
               minorChunks: [Stave(HorizontalGroup(BuiltList()))].toBuiltList(),
@@ -143,7 +149,8 @@ class _GenericChunkControls extends StatelessWidget {
         PackedButton(
           child: const Icon(CupertinoIcons.delete_solid)
               .padding(const EdgeInsets.all(1)),
-          colour: CupertinoColors.destructiveRed,
+          colour: ColourPalette.of(context).danger,
+          filledChildColour: ColourPalette.of(context).secondaryBackground,
           onTap: () => onChangeDeck(
             deckIndex.deck.rebuildChunks(
               (chunksBuilder) => chunksBuilder.removeAt(chunkIndex),
@@ -153,7 +160,8 @@ class _GenericChunkControls extends StatelessWidget {
         PackedButton(
           child: const Icon(CupertinoIcons.arrow_up_arrow_down)
               .padding(const EdgeInsets.all(1)),
-          colour: CupertinoColors.activeBlue,
+          colour: ColourPalette.of(context).active,
+          filledChildColour: ColourPalette.of(context).secondaryBackground,
           wrapper: (child) => ReorderableDragStartListener(
             index: chunkIndex,
             child: child,
@@ -194,6 +202,7 @@ class _EditingChunkBody extends StatelessWidget {
       return BCForm<CountdownChunk>(
         value: chunk,
         onChange: onChangeChunkPreservingKeys,
+        backgroundColour: ColourPalette.of(context).background,
         fields: [
           BCTextFormField(
             label: const Text('Title:'),
@@ -267,12 +276,15 @@ class _EditingChunkBody extends StatelessWidget {
           ),
         ],
       ).background(
-        selected(slide: 0) ? CupertinoColors.activeBlue : Colors.black,
+        selected(slide: 0)
+            ? ColourPalette.of(context).secondaryActive
+            : ColourPalette.of(context).background,
       );
     } else if (chunk is TitleChunk) {
       return BCForm<TitleChunk>(
         value: chunk,
         onChange: onChangeChunkPreservingKeys,
+        backgroundColour: ColourPalette.of(context).background,
         fields: [
           BCTextFormField(
             label: const Text('Title:'),
@@ -290,7 +302,9 @@ class _EditingChunkBody extends StatelessWidget {
           ),
         ],
       ).background(
-        selected(slide: 0) ? CupertinoColors.activeBlue : Colors.black,
+        selected(slide: 0)
+            ? ColourPalette.of(context).secondaryActive
+            : ColourPalette.of(context).background,
       );
     } else if (chunk is BodyChunk) {
       return Column(
@@ -307,8 +321,8 @@ class _EditingChunkBody extends StatelessWidget {
             onChangeDeck: onChangeDeck,
           )
               .background(selected(slide: minorChunkIndex)
-                  ? CupertinoColors.activeBlue
-                  : Colors.black)
+                  ? ColourPalette.of(context).secondaryActive
+                  : ColourPalette.of(context).background)
               .padding(const EdgeInsets.symmetric(vertical: 0.5));
         }).toList(),
       );
@@ -391,7 +405,7 @@ class _EditingMinorChunkState extends State<_EditingMinorChunk> {
       padding: const EdgeInsets.all(2),
       controller: controller,
       focusNode: focusNode,
-      style: Theme.of(context).textTheme.bodyMedium,
+      style: ColourPalette.of(context).bodyStyle,
       autofocus: widget.selected,
       maxLines: null,
       onChanged: (text) {
@@ -408,7 +422,7 @@ class _EditingMinorChunkState extends State<_EditingMinorChunk> {
           slide: widget.minorChunkIndex,
         ),
       ),
-      cursorColor: Colors.white,
+      cursorColor: ColourPalette.of(context).foreground,
     ).callbackShortcuts(bindings: {
       const SingleActivator(
         LogicalKeyboardKey.arrowUp,
@@ -648,7 +662,8 @@ class _EditingChunkSpecificButtons extends StatelessWidget {
           PackedButton(
             child:
                 const Icon(CupertinoIcons.add).padding(const EdgeInsets.all(1)),
-            colour: CupertinoColors.activeBlue,
+            colour: ColourPalette.of(context).active,
+            filledChildColour: ColourPalette.of(context).secondaryBackground,
             onTap: () => onChangeChunk(
               chunk.rebuildMinorChunks(
                 (minorChunksBuilder) => minorChunksBuilder.add(''),
@@ -712,7 +727,7 @@ class _EditingChunk extends StatelessWidget {
           chunkIndex: chunkIndex,
           onChangeDeck: onChangeDeck,
         ),
-      ]).background(CupertinoColors.darkBackgroundGray),
+      ]).background(ColourPalette.of(context).secondaryBackground),
       _EditingChunkBody(
         deckIndex: deckIndex,
         chunk: chunk,
@@ -751,11 +766,13 @@ class EditingDeckPanel extends StatefulWidget {
 
 class _EditingDeckPanelState extends State<EditingDeckPanel> {
   final listKey = UniqueKey();
+  UniqueKey commentKey = UniqueKey();
   List<UniqueKey> chunkKeys = [];
   Deck? expectedDeck;
 
   void refreshKeys() {
     if (widget.deckIndex.deck != expectedDeck) {
+      commentKey = UniqueKey();
       chunkKeys = List.generate(
         widget.deckIndex.deck.chunks.length,
         (index) => UniqueKey(),
@@ -787,12 +804,16 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
     return Column(children: [
       Row(children: [
         TextFormField(
+          key: commentKey,
           initialValue: widget.deckIndex.deck.comment,
           decoration: InputDecoration.collapsed(
             hintText: widget.deckIndex.deck.label,
+            hintStyle: ColourPalette.of(context)
+                .headingStyle
+                .copyWith(color: ColourPalette.of(context).secondaryForeground),
           ),
-          style: Theme.of(context).primaryTextTheme.headlineSmall,
-          onChanged: (comment) => widget.onChange(
+          style: ColourPalette.of(context).headingStyle,
+          onChanged: (comment) => onChangePreservingKeys(
             widget.deckIndex.deck.withComment(comment),
           ),
         ).expanded(),
@@ -801,13 +822,16 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
           PackedButton(
             child:
                 const Icon(CupertinoIcons.add).padding(const EdgeInsets.all(4)),
-            colour: CupertinoColors.activeBlue,
+            colour: ColourPalette.of(context).active,
+            filledChildColour: ColourPalette.of(context).secondaryBackground,
             onTap: () => widget.onChange(
               widget.deckIndex.deck.rebuildChunks(
-                (chunksBuilder) => chunksBuilder.insert(
-                  widget.deckIndex.index.chunk + 1,
-                  BodyChunk(minorChunks: [''].toBuiltList()),
-                ),
+                (chunksBuilder) {
+                  chunksBuilder.insert(
+                    min(widget.deckIndex.index.chunk + 1, chunksBuilder.length),
+                    BodyChunk(minorChunks: [''].toBuiltList()),
+                  );
+                },
               ),
             ),
           )
@@ -840,6 +864,6 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
           widget.onChange(newDeck);
         },
       ).expanded(),
-    ]).background(CupertinoColors.darkBackgroundGray);
+    ]).background(ColourPalette.of(context).secondaryBackground);
   }
 }

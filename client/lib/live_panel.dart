@@ -7,6 +7,7 @@ import 'package:core/deck.dart';
 import 'package:core/message.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
 import 'deck_panel.dart';
 import 'docked_preview.dart';
 
@@ -91,7 +92,7 @@ class LivePanelState extends State<LivePanel> {
               (deckIndex == null
                       ? const Text("Nothing Live")
                           .centered()
-                          .background(Colors.black)
+                          .background(ColourPalette.of(context).background)
                       : DeckPanel(
                           deckIndex: deckIndex!,
                           select: select,
@@ -104,10 +105,10 @@ class LivePanelState extends State<LivePanel> {
               ).constrained(constraints),
             ]);
           }).expanded(),
-          const Icon(Icons.close, color: Colors.black)
+          Icon(Icons.close, color: ColourPalette.of(context).background)
               .centered()
               .container(
-                color: const Color.fromARGB(255, 255, 0, 0),
+                color: ColourPalette.of(context).danger,
                 width: 40,
               )
               .gestureDetector(

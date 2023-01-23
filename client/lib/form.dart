@@ -4,17 +4,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
+
 @immutable
 class _Input<T> extends StatefulWidget {
   final BCFormField<T> field;
   final T value;
   final void Function(T) onChange;
+  final Color backgroundColour;
 
   const _Input({
     super.key,
     required this.field,
     required this.value,
     required this.onChange,
+    required this.backgroundColour,
   });
 
   @override
@@ -37,11 +41,12 @@ class _InputState<T> extends State<_Input<T>> {
                 widget.onChange(newValue);
               }
             },
+            backgroundColour: widget.backgroundColour,
           )
           .expanded(),
-      const Icon(
+      Icon(
         CupertinoIcons.exclamationmark_circle,
-        color: CupertinoColors.destructiveRed,
+        color: ColourPalette.of(context).danger,
       ).offstage(!isInvalid),
     ]);
   }
@@ -59,12 +64,14 @@ abstract class BCFormField<T> {
     required BuildContext context,
     required T value,
     required void Function(T?) onChange,
+    required final Color backgroundColour,
   });
 
   TableRow buildRow({
     required BuildContext context,
     required T value,
     required void Function(T) onChange,
+    required final Color backgroundColour,
   }) =>
       TableRow(children: [
         label
@@ -74,6 +81,7 @@ abstract class BCFormField<T> {
           field: this,
           value: value,
           onChange: onChange,
+          backgroundColour: backgroundColour,
         ),
       ]);
 }
@@ -98,16 +106,17 @@ class BCTextFormField<T> extends BCFormField<T> {
     required BuildContext context,
     required T value,
     required void Function(T?) onChange,
+    required final Color backgroundColour,
   }) {
     return CupertinoTextFormFieldRow(
       padding: const EdgeInsets.all(2),
       initialValue: getter(value),
-      style: Theme.of(context).textTheme.bodyMedium,
+      style: ColourPalette.of(context).bodyStyle,
       autofocus: autofocus,
       maxLines: null,
       onChanged: (text) => onChange(setter(value)(text)),
       onTap: onTap,
-      cursorColor: Colors.white,
+      cursorColor: ColourPalette.of(context).foreground,
     );
   }
 }
@@ -161,6 +170,7 @@ class BCTickBoxFormField<T> extends BCFormField<T> {
     required BuildContext context,
     required T value,
     required void Function(T?) onChange,
+    required final Color backgroundColour,
   }) {
     return Checkbox(
       value: getter(value),
@@ -187,6 +197,7 @@ class BCRadioFormField<T, U> extends BCFormField<T> {
     required BuildContext context,
     required T value,
     required void Function(T?) onChange,
+    required final Color backgroundColour,
   }) {
     return PackedButtonRow(
         buttons: options
@@ -195,6 +206,7 @@ class BCRadioFormField<T, U> extends BCFormField<T> {
                 child: option.child,
                 colour: option.colour,
                 filled: option.value == getter(value),
+                filledChildColour: backgroundColour,
                 onTap: () => onChange(setter(value)(option.value)),
               ),
             )
@@ -206,12 +218,14 @@ class BCRadioFormField<T, U> extends BCFormField<T> {
 class BCForm<T> extends StatelessWidget {
   final T value;
   final void Function(T) onChange;
+  final Color backgroundColour;
   final BuiltList<BCFormField<T>> fields;
 
   BCForm({
     super.key,
     required this.value,
     required this.onChange,
+    required this.backgroundColour,
     required Iterable<BCFormField<T>> fields,
   }) : fields = fields.toBuiltList();
 
@@ -219,8 +233,9 @@ class BCForm<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Table(
       columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
-      border: const TableBorder(
-        horizontalInside: BorderSide(color: CupertinoColors.darkBackgroundGray),
+      border: TableBorder(
+        horizontalInside:
+            BorderSide(color: ColourPalette.of(context).secondaryBackground),
       ),
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       children: fields
@@ -229,6 +244,7 @@ class BCForm<T> extends StatelessWidget {
               context: context,
               value: value,
               onChange: onChange,
+              backgroundColour: backgroundColour,
             ),
           )
           .toList(),

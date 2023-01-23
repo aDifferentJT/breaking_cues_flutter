@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:core/deck.dart';
@@ -9,6 +8,7 @@ import 'package:core/message.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 import 'package:output/output.dart';
 
+import 'colours.dart';
 import 'left_tabs.dart';
 
 class DockedPreview extends StatefulWidget {
@@ -49,16 +49,16 @@ class _DockedPreviewState extends State<DockedPreview> {
     return LayoutBuilder(builder: (context, constraints) {
       return Column(children: [
         Container(
-          decoration: const ShapeDecoration(
-            color: Colors.grey,
-            shape: StadiumBorder(),
+          decoration: ShapeDecoration(
+            color: ColourPalette.of(context).secondaryForeground,
+            shape: const StadiumBorder(),
           ),
           width: handleHeight * 3,
           height: handleHeight / 2,
         )
             .container(
               alignment: Alignment.center,
-              color: Colors.transparent,
+              color: ColourPalette.of(context).background,
               height: handleHeight,
             )
             .gestureDetector(
@@ -98,7 +98,7 @@ class _DockedPreviewState extends State<DockedPreview> {
                   ))
               .toList(growable: false),
         ).expanded(),
-      ]).background(CupertinoColors.darkBackgroundGray).constrained(
+      ]).background(ColourPalette.of(context).secondaryBackground).constrained(
             BoxConstraints(
               maxHeight: height + handleHeight,
             ),

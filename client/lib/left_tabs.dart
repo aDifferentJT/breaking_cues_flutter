@@ -1,7 +1,8 @@
 import 'package:collection/collection.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
+
+import 'colours.dart';
 
 @immutable
 class TabEntry {
@@ -41,7 +42,7 @@ class _LeftTabsState extends State<LeftTabs> {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: index == selected
-                    ? CupertinoColors.darkBackgroundGray
+                    ? ColourPalette.of(context).secondaryBackground
                     : Colors.transparent,
                 borderRadius: const BorderRadius.horizontal(
                   left: Radius.circular(4),
@@ -52,7 +53,7 @@ class _LeftTabsState extends State<LeftTabs> {
       )
           .container(
             padding: const EdgeInsets.only(left: 4),
-            color: Colors.black,
+            color: ColourPalette.of(context).background,
           )
           .sized(width: widget.tabWidth + 4),
       (widget.keepHiddenChildrenAlive

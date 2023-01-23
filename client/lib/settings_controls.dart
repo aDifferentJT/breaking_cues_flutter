@@ -9,6 +9,8 @@ import 'package:core/deck.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 import 'package:output/colour_to_flutter.dart';
 
+import 'colours.dart';
+
 @immutable
 class StyleControl extends StatelessWidget {
   final Style style;
@@ -24,8 +26,9 @@ class StyleControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colour =
-        style == selected ? CupertinoColors.activeBlue : Colors.white;
+    final colour = style == selected
+        ? ColourPalette.of(context).active
+        : ColourPalette.of(context).foreground;
     return () {
       switch (style) {
         case Style.none:
@@ -303,7 +306,9 @@ class OptionalStyleControls extends StatelessWidget {
           Text(
             "Default",
             style: TextStyle(
-              color: style == null ? CupertinoColors.activeBlue : Colors.white,
+              color: style == null
+                  ? ColourPalette.of(context).active
+                  : ColourPalette.of(context).foreground,
             ),
           )
               .gestureDetector(onTap: () => setStyle(null))
@@ -370,7 +375,10 @@ class _ColourControlState extends State<ColourControl> {
         Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
         CupertinoTextField(
           controller: _controller,
-          style: const TextStyle(color: Colors.white, fontFamily: "Courier"),
+          style: TextStyle(
+            color: ColourPalette.of(context).foreground,
+            fontFamily: "Courier",
+          ),
           onSubmitted: (valueStr) {
             if (valueStr.length == 8) {
               widget.setColour(Color.fromARGB(
@@ -443,8 +451,8 @@ class _OptionalColourControlState extends State<OptionalColourControl> {
           controller: _controller,
           style: TextStyle(
             color: widget.colour != null
-                ? CupertinoColors.activeBlue
-                : Colors.white,
+                ? ColourPalette.of(context).active
+                : ColourPalette.of(context).foreground,
             fontFamily: "Courier",
           ),
           onSubmitted: (valueStr) {
@@ -463,7 +471,8 @@ class _OptionalColourControlState extends State<OptionalColourControl> {
         ).expanded(),
         Icon(
           Icons.restore,
-          color: widget.colour == null ? CupertinoColors.activeBlue : null,
+          color:
+              widget.colour == null ? ColourPalette.of(context).active : null,
         )
             .gestureDetector(onTap: () => widget.setColour(null))
             .padding(const EdgeInsets.all(4)),
@@ -521,7 +530,7 @@ class _FontFamilyControlState extends State<FontFamilyControl> {
         Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
         CupertinoTextField(
           controller: _controller,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: ColourPalette.of(context).foreground),
           onSubmitted: widget.setFontFamily,
         ).expanded(),
       ],
@@ -582,14 +591,16 @@ class _OptionalFontFamilyControlState extends State<OptionalFontFamilyControl> {
           controller: _controller,
           style: TextStyle(
             color: widget.fontFamily != null
-                ? CupertinoColors.activeBlue
-                : Colors.white,
+                ? ColourPalette.of(context).active
+                : ColourPalette.of(context).foreground,
           ),
           onSubmitted: widget.setFontFamily,
         ).expanded(),
         Icon(
           Icons.restore,
-          color: widget.fontFamily == null ? CupertinoColors.activeBlue : null,
+          color: widget.fontFamily == null
+              ? ColourPalette.of(context).active
+              : null,
         )
             .gestureDetector(onTap: () => widget.setFontFamily(null))
             .padding(const EdgeInsets.all(4)),
@@ -647,7 +658,7 @@ class _SizeControlState extends State<SizeControl> {
         Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
         CupertinoTextField(
           controller: _controller,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: ColourPalette.of(context).foreground),
           onSubmitted: (valueStr) {
             widget.setSize(double.parse(valueStr));
           },
@@ -712,8 +723,9 @@ class _OptionalSizeControlState extends State<OptionalSizeControl> {
         CupertinoTextField(
           controller: _controller,
           style: TextStyle(
-            color:
-                widget.size != null ? CupertinoColors.activeBlue : Colors.white,
+            color: widget.size != null
+                ? ColourPalette.of(context).active
+                : ColourPalette.of(context).foreground,
           ),
           onSubmitted: (valueStr) {
             widget.setSize(double.parse(valueStr));
@@ -724,7 +736,7 @@ class _OptionalSizeControlState extends State<OptionalSizeControl> {
         ).expanded(),
         Icon(
           Icons.restore,
-          color: widget.size == null ? CupertinoColors.activeBlue : null,
+          color: widget.size == null ? ColourPalette.of(context).active : null,
         )
             .gestureDetector(onTap: () => widget.setSize(null))
             .padding(const EdgeInsets.all(4)),
@@ -921,7 +933,7 @@ class _FoldingRowState extends State<_FoldingRow>
           .container(
             padding: const EdgeInsets.all(8),
             color: widget.selected
-                ? CupertinoColors.activeBlue
+                ? ColourPalette.of(context).active
                 : Colors.transparent,
           )
           .gestureDetector(onTap: widget.toggleSelect),
@@ -963,7 +975,7 @@ class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
                   .rebuild((builder) => builder[entry.key] = newSettings),
             ),
           )
-              .container(color: CupertinoColors.darkBackgroundGray)
+              .container(color: ColourPalette.of(context).secondaryBackground)
               .padding(const EdgeInsets.only(left: 16, bottom: 8)),
           selected: selected == entry.key,
           toggleSelect: () {
@@ -1015,7 +1027,7 @@ class _OptionalDisplaySettingsPanelState
             defaultSettings: widget.defaultSettings[entry.key] ??
                 const DisplaySettings.default_(),
           )
-              .container(color: CupertinoColors.darkBackgroundGray)
+              .container(color: ColourPalette.of(context).secondaryBackground)
               .padding(const EdgeInsets.only(left: 16, bottom: 8)),
           selected: selected == entry.key,
           toggleSelect: () {

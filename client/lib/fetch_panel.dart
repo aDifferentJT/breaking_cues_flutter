@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
 import 'form.dart';
 import 'left_tabs.dart';
 
@@ -19,10 +20,7 @@ class _FetchButtonContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (deck == null) {
-      return Text(
-        'Fetch',
-        style: Theme.of(context).primaryTextTheme.bodyLarge,
-      );
+      return Text('Fetch', style: ColourPalette.of(context).headingStyle);
     } else {
       return FutureBuilder(
           future: deck,
@@ -64,9 +62,9 @@ class _FetchButtonState extends State<_FetchButton> {
     return _FetchButtonContent(deck: deck)
         .container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: CupertinoColors.activeBlue,
-              borderRadius: BorderRadius.all(Radius.circular(8)),
+            decoration: BoxDecoration(
+              color: ColourPalette.of(context).active,
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
             ))
         .gestureDetector(
           onTap: () => setState(() {
@@ -104,20 +102,18 @@ class _BibleFetchPanelState extends State<_BibleFetchPanel> {
     return Column(children: [
       Row(
         children: [
-          Text(
-            "Fetch Bible",
-            style: Theme.of(context).primaryTextTheme.headlineSmall,
-          ),
+          Text("Fetch Bible", style: ColourPalette.of(context).headingStyle),
           const Spacer(),
         ],
       ).container(
         padding: const EdgeInsets.all(20),
-        color: CupertinoColors.darkBackgroundGray,
+        color: ColourPalette.of(context).secondaryBackground,
       ),
       ListView(children: [
         BCForm<BibleParams>(
           value: bibleParams,
           onChange: (newParams) => setState(() => bibleParams = newParams),
+          backgroundColour: ColourPalette.of(context).background,
           fields: [
             BCTextFormField(
               label: const Text('Query:'),
@@ -136,7 +132,7 @@ class _BibleFetchPanelState extends State<_BibleFetchPanel> {
         () => fetchBible(bibleParams, deckKey: widget.deckKey),
         updateDeck: widget.updateDeck,
       ),
-    ]).background(Colors.black);
+    ]).background(ColourPalette.of(context).background);
   }
 }
 
@@ -162,20 +158,18 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
     return Column(children: [
       Row(
         children: [
-          Text(
-            "Fetch Psalm",
-            style: Theme.of(context).primaryTextTheme.headlineSmall,
-          ),
+          Text("Fetch Psalm", style: ColourPalette.of(context).headingStyle),
           const Spacer(),
         ],
       ).container(
         padding: const EdgeInsets.all(20),
-        color: CupertinoColors.darkBackgroundGray,
+        color: ColourPalette.of(context).secondaryBackground,
       ),
       ListView(children: [
         BCForm<PsalmParams>(
           value: psalmParams,
           onChange: (newParams) => setState(() => psalmParams = newParams),
+          backgroundColour: ColourPalette.of(context).background,
           fields: [
             BCRadioFormField(
               label: const Text('Psalter:').padding(const EdgeInsets.all(4)),
@@ -185,12 +179,12 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
                 BCRadioOption(
                   value: Psalter.bcp,
                   child: const Text('BCP').padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
                   value: Psalter.cw,
                   child: const Text('CW').padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
                 ),
               ].toBuiltList(),
             ),
@@ -239,18 +233,18 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
                 BCRadioOption(
                   value: PsalmBold.none,
                   child: const Text('None').padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
                   value: PsalmBold.oddVerses,
                   child: const Text('Odd').padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
                   value: PsalmBold.secondHalf,
                   child:
                       const Text('2nd Half').padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
                 ),
               ].toBuiltList(),
             ),
@@ -261,7 +255,7 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
         () => fetchPsalm(psalmParams, deckKey: widget.deckKey),
         updateDeck: widget.updateDeck,
       ),
-    ]).background(Colors.black);
+    ]).background(ColourPalette.of(context).background);
   }
 }
 
@@ -287,20 +281,18 @@ class _HymnFetchPanelState extends State<_HymnFetchPanel> {
     return Column(children: [
       Row(
         children: [
-          Text(
-            "Fetch Hymn",
-            style: Theme.of(context).primaryTextTheme.headlineSmall,
-          ),
+          Text("Fetch Hymn", style: ColourPalette.of(context).headingStyle),
           const Spacer(),
         ],
       ).container(
         padding: const EdgeInsets.all(20),
-        color: CupertinoColors.darkBackgroundGray,
+        color: ColourPalette.of(context).secondaryBackground,
       ),
       ListView(children: [
         BCForm<HymnParams>(
           value: hymnParams,
           onChange: (newParams) => setState(() => hymnParams = newParams),
+          backgroundColour: ColourPalette.of(context).background,
           fields: [
             BCRadioFormField(
               label: const Text('Hymnal:'),
@@ -310,7 +302,7 @@ class _HymnFetchPanelState extends State<_HymnFetchPanel> {
                 BCRadioOption(
                   value: Hymnal.neh,
                   child: const Text('NEH').padding(const EdgeInsets.all(4)),
-                  colour: CupertinoColors.activeBlue,
+                  colour: ColourPalette.of(context).active,
                 ),
               ].toBuiltList(),
             ),
@@ -331,7 +323,7 @@ class _HymnFetchPanelState extends State<_HymnFetchPanel> {
         () => fetchHymn(hymnParams, deckKey: widget.deckKey),
         updateDeck: widget.updateDeck,
       ),
-    ]).background(Colors.black);
+    ]).background(ColourPalette.of(context).background);
   }
 }
 

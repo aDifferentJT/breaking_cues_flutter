@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:client/fetch_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -9,8 +8,10 @@ import 'package:core/deck.dart';
 import 'package:core/message.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
 import 'deck_panel.dart';
 import 'docked_preview.dart';
+import 'fetch_panel.dart';
 import 'left_tabs.dart';
 import 'settings_controls.dart';
 
@@ -27,44 +28,44 @@ class GoLiveButtons extends StatelessWidget {
     return Column(
       children: [
         Row(
-          children: const [
-            Spacer(),
+          children: [
+            const Spacer(),
             Icon(
               CupertinoIcons.film,
-              color: Colors.black,
+              color: ColourPalette.of(context).background,
             ),
             Icon(
               CupertinoIcons.right_chevron,
-              color: Colors.black,
+              color: ColourPalette.of(context).background,
             ),
-            Spacer(),
+            const Spacer(),
           ],
         )
             .centered()
-            .background(const Color.fromARGB(255, 255, 0, 0))
+            .background(ColourPalette.of(context).danger)
             .gestureDetector(onTap: () => goLive(quiet: false))
             .expanded(flex: 3),
-        const Divider(
+        Divider(
           height: 2,
           thickness: 2,
-          color: CupertinoColors.darkBackgroundGray,
+          color: ColourPalette.of(context).secondaryBackground,
         ),
         Row(
-          children: const [
-            Spacer(),
+          children: [
+            const Spacer(),
             Icon(
               CupertinoIcons.exclamationmark,
-              color: Colors.black,
+              color: ColourPalette.of(context).background,
             ),
             Icon(
               CupertinoIcons.right_chevron,
-              color: Colors.black,
+              color: ColourPalette.of(context).background,
             ),
-            Spacer(),
+            const Spacer(),
           ],
         )
             .centered()
-            .background(const Color.fromARGB(255, 255, 0, 0))
+            .background(ColourPalette.of(context).danger)
             .gestureDetector(onTap: () => goLive(quiet: true))
             .expanded(flex: 2),
       ],
@@ -222,9 +223,9 @@ class PreviewPanelState extends State<PreviewPanel>
           (deckIndex == null
                   ? const Text("Nothing Selected")
                       .centered()
-                      .background(Colors.black)
+                      .background(ColourPalette.of(context).background)
                   : LeftTabs(
-                      keepHiddenChildrenAlive: true,
+                      keepHiddenChildrenAlive: false,
                       children: [
                         TabEntry(
                           icon: const Text("Preview").rotated(quarterTurns: 1),
@@ -255,13 +256,12 @@ class PreviewPanelState extends State<PreviewPanel>
                           body: Column(children: [
                             Text(
                               '${deckIndex?.deck.label ?? ''} Settings',
-                              style: Theme.of(context)
-                                  .primaryTextTheme
-                                  .headlineSmall,
+                              style: ColourPalette.of(context).headingStyle,
                             ).container(
                                 alignment: Alignment.centerLeft,
                                 padding: const EdgeInsets.all(16),
-                                color: CupertinoColors.darkBackgroundGray),
+                                color: ColourPalette.of(context)
+                                    .secondaryBackground),
                             OptionalDisplaySettingsPanel(
                               displaySettings: deckIndex!.deck.displaySettings
                                   .rebuild((builder) {
@@ -277,7 +277,10 @@ class PreviewPanelState extends State<PreviewPanel>
                                 deckIndex!.deck.withDisplaySettings(settings),
                               ),
                               defaultSettings: programme.defaultSettings,
-                            ).background(Colors.black).expanded(),
+                            )
+                                .background(
+                                    ColourPalette.of(context).background)
+                                .expanded(),
                           ]),
                         ),
                       ],

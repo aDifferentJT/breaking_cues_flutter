@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_utils/widget_modifiers.dart';
 
+import 'colours.dart';
+
 void _doNothing() {}
 T _identity<T>(T x) => x;
 
@@ -84,7 +86,7 @@ class PackedButton {
     required this.child,
     required this.colour,
     this.filled = false,
-    this.filledChildColour = Colors.black,
+    required this.filledChildColour,
     this.onTap = _doNothing,
     this.wrapper = _identity,
   });
