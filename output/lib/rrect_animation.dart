@@ -100,15 +100,9 @@ class RRectEndAnimatable extends Animatable<RRectEnd> {
         radius2: radius,
       );
       return RRectEndAnimatable._fromItems([
-        ...?(begin != mid1
-            ? [RRectEndAnimatable._tween(begin: begin, end: mid1)]
-            : null),
-        ...?(mid1 != mid2
-            ? [RRectEndAnimatable._tween(begin: mid1, end: mid2)]
-            : null),
-        ...?(mid2 != end
-            ? [RRectEndAnimatable._tween(begin: mid2, end: end)]
-            : null),
+        if (begin != mid1) RRectEndAnimatable._tween(begin: begin, end: mid1),
+        if (mid1 != mid2) RRectEndAnimatable._tween(begin: mid1, end: mid2),
+        if (mid2 != end) RRectEndAnimatable._tween(begin: mid2, end: end),
       ]);
     } else if (begin.edgeInset > end.edgeInset) {
       final radius = min(
@@ -126,15 +120,9 @@ class RRectEndAnimatable extends Animatable<RRectEnd> {
         radius2: radius,
       );
       return RRectEndAnimatable._fromItems([
-        ...?(begin != mid1
-            ? [RRectEndAnimatable._tween(begin: begin, end: mid1)]
-            : null),
-        ...?(mid1 != mid2
-            ? [RRectEndAnimatable._tween(begin: mid1, end: mid2)]
-            : null),
-        ...?(mid2 != end
-            ? [RRectEndAnimatable._tween(begin: mid2, end: end)]
-            : null),
+        if (begin != mid1) RRectEndAnimatable._tween(begin: begin, end: mid1),
+        if (mid1 != mid2) RRectEndAnimatable._tween(begin: mid1, end: mid2),
+        if (mid2 != end) RRectEndAnimatable._tween(begin: mid2, end: end),
       ]);
     } else {
       throw 0; // Impossible

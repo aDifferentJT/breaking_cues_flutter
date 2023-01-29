@@ -170,20 +170,16 @@ class DigitalCountdown extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ...?(remaining.inHours > 0
-            ? [
-                ...toWidgets('${remaining.inHours}'.padLeft(2, '0')),
-                Text(':', style: style),
-              ]
-            : null),
-        ...?(remaining.inMinutes > 0
-            ? [
-                ...toWidgets('${remaining.inMinutes % 60}'.padLeft(2, '0')),
-                Text(':', style: style),
-              ]
-            : null),
+        if (remaining.inHours > 0) ...[
+          ...toWidgets('${remaining.inHours}'.padLeft(2, '0')),
+          Text(':', style: style),
+        ],
+        if (remaining.inMinutes > 0) ...[
+          ...toWidgets('${remaining.inMinutes % 60}'.padLeft(2, '0')),
+          Text(':', style: style),
+        ],
         ...toWidgets('${remaining.inSeconds % 60}'.padLeft(2, '0')),
-        ...?(remaining.inMinutes == 0 ? [Text('s', style: style)] : null),
+        if (remaining.inMinutes == 0) Text('s', style: style),
       ],
     );
   }

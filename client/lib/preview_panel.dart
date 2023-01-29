@@ -11,6 +11,7 @@ import 'package:flutter_utils/widget_modifiers.dart';
 import 'colours.dart';
 import 'deck_panel.dart';
 import 'docked_preview.dart';
+import 'editing_deck_panel.dart';
 import 'fetch_panel.dart';
 import 'left_tabs.dart';
 import 'settings_controls.dart';

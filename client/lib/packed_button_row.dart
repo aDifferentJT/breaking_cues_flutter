@@ -1,10 +1,7 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_utils/widget_modifiers.dart';
-
-import 'colours.dart';
 
 void _doNothing() {}
 T _identity<T>(T x) => x;

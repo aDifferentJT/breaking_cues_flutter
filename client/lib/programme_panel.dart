@@ -221,8 +221,7 @@ class ProgrammePanelState extends State<ProgrammePanel> {
             Text(
               "Programme",
               style: ColourPalette.of(context).headingStyle,
-            ),
-            const Spacer(),
+            ).expanded(),
             PackedButtonRow(
               buttons: [
                 PackedButton(

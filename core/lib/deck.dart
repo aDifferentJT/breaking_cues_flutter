@@ -744,15 +744,16 @@ class Deck {
       );
 
   @override
-  bool operator ==(Object other) {
-    return other is Deck && chunks == other.chunks;
-  }
+  bool operator ==(Object other) =>
+      other is Deck &&
+      key == other.key &&
+      // displaySettings == other.displaySettings && TODO
+      comment == other.comment &&
+      chunks == other.chunks;
 
   @override
-  int get hashCode => Object.hash(
-        comment,
-        Object.hashAll(chunks.map((slide) => slide.hashCode)),
-      );
+  int get hashCode =>
+      Object.hash(key, displaySettings, comment, Object.hashAll(chunks));
 }
 
 @immutable
@@ -774,9 +775,8 @@ class Index {
       };
 
   @override
-  bool operator ==(Object other) {
-    return other is Index && hashCode == other.hashCode;
-  }
+  bool operator ==(Object other) =>
+      other is Index && chunk == other.chunk && slide == other.slide;
 
   @override
   int get hashCode => Object.hash(chunk, slide);
@@ -811,9 +811,8 @@ class DeckIndex {
   DeckIndex withDeck(Deck deck) => DeckIndex(deck: deck, index: index);
 
   @override
-  bool operator ==(Object other) {
-    return other is DeckIndex && hashCode == other.hashCode;
-  }
+  bool operator ==(Object other) =>
+      other is DeckIndex && deck == other.deck && index == other.index;
 
   @override
   int get hashCode => Object.hash(deck, index);

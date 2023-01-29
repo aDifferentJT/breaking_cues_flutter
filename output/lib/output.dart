@@ -287,6 +287,9 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final countdown =
+        _captionTransition.evaluate(_captionDecorationController).countdown;
+
     return SizedBox(
       width: 1920,
       height: 1080,
@@ -338,20 +341,12 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
                   .evaluate(_captionDecorationController)
                   .bottom,
             ),
-        ...?() {
-          final countdown = _captionTransition
-              .evaluate(_captionDecorationController)
-              .countdown;
-          if (countdown != null) {
-            return [
-              _CountdownView(
-                countdown,
-                backgroundColour: _captionTransition.backgroundColour
-                    .evaluate(_captionDecorationController)!,
-              ).positionedFill,
-            ];
-          }
-        }(),
+        if (countdown != null)
+          _CountdownView(
+            countdown,
+            backgroundColour: _captionTransition.backgroundColour
+                .evaluate(_captionDecorationController)!,
+          ).positionedFill,
       ]),
     );
   }

@@ -75,94 +75,96 @@ class _ClientAppState extends State<ClientApp>
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: SetColourPalette(
-        colourPalette: colourPalette.evaluate(colourPaletteController),
-        child: Builder(
-          builder: (context) => Row(
-            children: [
-              LeftTabs(
-                keepHiddenChildrenAlive: true,
-                children: [
-                  TabEntry(
-                    icon: const Text('Programme').rotated(quarterTurns: 1),
-                    body: ProgrammePanel(
-                      updateStream: streams.updateStream,
-                      updateStreamSink: streams.updateStreamSink,
-                      previewStream: previewStream.stream,
-                      previewStreamSink: previewStream.sink,
-                      liveStream: streams.liveStream,
-                      liveStreamSink: streams.liveStreamSink,
+      home: Material(
+        child: SetColourPalette(
+          colourPalette: colourPalette.evaluate(colourPaletteController),
+          child: Builder(
+            builder: (context) => Row(
+              children: [
+                LeftTabs(
+                  keepHiddenChildrenAlive: true,
+                  children: [
+                    TabEntry(
+                      icon: const Text('Programme').rotated(quarterTurns: 1),
+                      body: ProgrammePanel(
+                        updateStream: streams.updateStream,
+                        updateStreamSink: streams.updateStreamSink,
+                        previewStream: previewStream.stream,
+                        previewStreamSink: previewStream.sink,
+                        liveStream: streams.liveStream,
+                        liveStreamSink: streams.liveStreamSink,
+                      ),
                     ),
-                  ),
-                  TabEntry(
-                    icon: const Text('Outputs').rotated(quarterTurns: 1),
-                    body: OutputSettingsPanel(
-                      updateStream: streams.updateStream,
-                      updateStreamSink: streams.updateStreamSink,
+                    TabEntry(
+                      icon: const Text('Outputs').rotated(quarterTurns: 1),
+                      body: OutputSettingsPanel(
+                        updateStream: streams.updateStream,
+                        updateStreamSink: streams.updateStreamSink,
+                      ),
                     ),
-                  ),
-                  TabEntry(
-                    icon: const Text('Settings').rotated(quarterTurns: 1),
-                    body: ClientSettingsPanel(
-                      setColourPalette: (newColourPalette) {
-                        colourPaletteController.stop();
-                        colourPalette = ColourPaletteTween(
-                          begin:
-                              colourPalette.evaluate(colourPaletteController),
-                          end: newColourPalette,
-                        );
-                        colourPaletteController.reset();
-                        colourPaletteController.forward();
-                      },
+                    TabEntry(
+                      icon: const Text('Settings').rotated(quarterTurns: 1),
+                      body: ClientSettingsPanel(
+                        setColourPalette: (newColourPalette) {
+                          colourPaletteController.stop();
+                          colourPalette = ColourPaletteTween(
+                            begin:
+                                colourPalette.evaluate(colourPaletteController),
+                            end: newColourPalette,
+                          );
+                          colourPaletteController.reset();
+                          colourPaletteController.forward();
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ).expanded(),
-              VerticalDivider(
-                width: 5,
-                thickness: 5,
-                color: ColourPalette.of(context).secondaryBackground,
-              ),
-              PreviewPanel(
-                requestUpdateStreamSink: streams.requestUpdateStreamSink,
-                updateStream: streams.updateStream,
-                updateStreamSink: streams.updateStreamSink,
-                previewStream: previewStream.stream,
-                liveStreamSink: streams.liveStreamSink,
-              ).expanded(),
-              VerticalDivider(
-                width: 5,
-                thickness: 5,
-                color: ColourPalette.of(context).secondaryBackground,
-              ),
-              LivePanel(
-                requestUpdateStreamSink: streams.requestUpdateStreamSink,
-                stream: streams.liveStream,
-                streamSink: streams.liveStreamSink,
-              ).expanded(),
-            ],
-          ).callbackShortcuts(bindings: {
-            SingleActivator(
-              LogicalKeyboardKey.keyN,
-              control: !(Platform.isMacOS || Platform.isIOS),
-              meta: Platform.isMacOS || Platform.isIOS,
-            ): () => streams.updateStreamSink.add(Programme.new_()),
-            SingleActivator(
-              LogicalKeyboardKey.keyO,
-              control: !(Platform.isMacOS || Platform.isIOS),
-              meta: Platform.isMacOS || Platform.isIOS,
-            ): () async {
-              var newProgramme = await open();
-              if (newProgramme != null) {
-                streams.updateStreamSink.add(newProgramme);
-              }
-            },
-            SingleActivator(
-              LogicalKeyboardKey.keyS,
-              control: !(Platform.isMacOS || Platform.isIOS),
-              meta: Platform.isMacOS || Platform.isIOS,
-            ): () => save(programme),
-          }),
+                  ],
+                ).expanded(),
+                VerticalDivider(
+                  width: 5,
+                  thickness: 5,
+                  color: ColourPalette.of(context).secondaryBackground,
+                ),
+                PreviewPanel(
+                  requestUpdateStreamSink: streams.requestUpdateStreamSink,
+                  updateStream: streams.updateStream,
+                  updateStreamSink: streams.updateStreamSink,
+                  previewStream: previewStream.stream,
+                  liveStreamSink: streams.liveStreamSink,
+                ).expanded(),
+                VerticalDivider(
+                  width: 5,
+                  thickness: 5,
+                  color: ColourPalette.of(context).secondaryBackground,
+                ),
+                LivePanel(
+                  requestUpdateStreamSink: streams.requestUpdateStreamSink,
+                  stream: streams.liveStream,
+                  streamSink: streams.liveStreamSink,
+                ).expanded(),
+              ],
+            ).callbackShortcuts(bindings: {
+              SingleActivator(
+                LogicalKeyboardKey.keyN,
+                control: !(Platform.isMacOS || Platform.isIOS),
+                meta: Platform.isMacOS || Platform.isIOS,
+              ): () => streams.updateStreamSink.add(Programme.new_()),
+              SingleActivator(
+                LogicalKeyboardKey.keyO,
+                control: !(Platform.isMacOS || Platform.isIOS),
+                meta: Platform.isMacOS || Platform.isIOS,
+              ): () async {
+                var newProgramme = await open();
+                if (newProgramme != null) {
+                  streams.updateStreamSink.add(newProgramme);
+                }
+              },
+              SingleActivator(
+                LogicalKeyboardKey.keyS,
+                control: !(Platform.isMacOS || Platform.isIOS),
+                meta: Platform.isMacOS || Platform.isIOS,
+              ): () => save(programme),
+            }),
+          ),
         ),
       ),
     );

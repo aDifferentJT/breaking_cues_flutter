@@ -4,7 +4,6 @@ import 'package:core/bible_fetcher.dart';
 import 'package:core/hymn_fetcher.dart';
 import 'package:core/psalm_fetcher.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
 import 'colours.dart';
