@@ -27,10 +27,7 @@ class BibleParams {
       );
 }
 
-Future<Deck?> fetchBible(
-  BibleParams params, {
-  required DeckKey deckKey,
-}) async {
+Future<BuiltList<Chunk>?> fetchBible(BibleParams params) async {
   final encodedQuery = Uri.encodeQueryComponent(
     params.query.replaceAll(
       RegExp('end', caseSensitive: false),
@@ -54,15 +51,27 @@ Future<Deck?> fetchBible(
       .map((element) => element
           .getElementsByClassName('text')
           .expand((element) => element.nodes)
-          .where((element) => element.nodeType == html.Node.TEXT_NODE)
+          .where(
+            (element) {
+              if (element.nodeType == html.Node.TEXT_NODE) {
+                return true;
+              } else {
+                if (element is html.Element) {
+                  return !element.className.contains('versenum') &&
+                      !element.className.contains('footnote');
+                } else {
+                  return true;
+                }
+              }
+            },
+          )
           .map((element) => element.text)
           .whereNotNull()
-          .join(' '));
+          .join(' ')
+          .replaceAll(RegExp(r'\s+'), ' '));
 
-  return Deck(
-      key: deckKey,
-      chunks: [
-        TitleChunk(title: params.query, subtitle: params.version),
-        BodyChunk(minorChunks: paragraphs.toBuiltList()),
-      ].toBuiltList());
+  return [
+    TitleChunk(title: params.query, subtitle: params.version),
+    BodyChunk(minorChunks: paragraphs.toBuiltList()),
+  ].toBuiltList();
 }

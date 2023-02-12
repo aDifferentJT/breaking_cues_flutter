@@ -14,6 +14,7 @@ import 'package:flutter_utils/widget_modifiers.dart';
 
 import 'colours.dart';
 import 'form.dart';
+import 'music_editor.dart';
 import 'packed_button_row.dart';
 
 @immutable
@@ -114,7 +115,7 @@ class _ChunkTypeRadio extends StatelessWidget {
           filledChildColour: ColourPalette.of(context).secondaryBackground,
           onTap: () => onChangeChunk(
             MusicChunk(
-              minorChunks: [Stave(HorizontalGroup(BuiltList()))].toBuiltList(),
+              minorChunks: [Stave(BuiltList())].toBuiltList(),
             ),
           ),
         ),
@@ -320,7 +321,11 @@ class _EditingChunkBody extends StatelessWidget {
         }).toList(),
       );
     } else if (chunk is MusicChunk) {
-      return const Text('Music chunks not yet supported');
+      return Column(
+        children: chunk.minorChunks
+            .map((stave) => MusicEditor(stave: stave))
+            .toList(),
+      );
     } else {
       return const Text('Unknown chunk type');
     }
@@ -765,15 +770,12 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
 
   void refreshKeys() {
     if (widget.deckIndex.deck != expectedDeck) {
-      print('refreshing');
       commentKey = UniqueKey();
       chunkKeys = List.generate(
         widget.deckIndex.deck.chunks.length,
         (index) => UniqueKey(),
       );
       expectedDeck = widget.deckIndex.deck;
-    } else {
-      print('not refreshing');
     }
   }
 

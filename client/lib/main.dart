@@ -31,12 +31,13 @@ class ClientApp extends StatefulWidget {
 
 class _ClientAppState extends State<ClientApp>
     with SingleTickerProviderStateMixin {
-  // final streams = ClientStreams.local();
-  final streams = ClientStreams.websocket(
-    WebSocketChannel.connect(
-      Uri.parse("ws://127.0.0.1:8080"),
-    ),
-  );
+  WebSocketChannel? websocketChannel;
+  ClientStreams streams = ClientStreams.local();
+  // final streams = ClientStreams.websocket(
+  //   WebSocketChannel.connect(
+  //     Uri.parse("ws://127.0.0.1:8080"),
+  //   ),
+  // );
 
   final previewStream = StreamController<DeckKey?>.broadcast();
 

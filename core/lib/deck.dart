@@ -606,27 +606,12 @@ class MusicChunk with Chunk {
   MusicChunk withMinorChunks(BuiltList<Stave> minorChunks) =>
       MusicChunk(minorChunks: minorChunks);
 
-  static final Parser<MusicChunk> parser =
-      SequenceParser2('Music: '.toParser(), Stave.parser)
-          .map2((_, stave) => stave)
-          .plusSeparated('\n\n'.toParser())
-          .map(
-            (minorChunks) => MusicChunk(
-              minorChunks: minorChunks.elements.toBuiltList(),
-            ),
-          );
-
-  MusicChunk.fromJson(Map<String, dynamic> json)
-      : minorChunks = (json['minorChunks'] as Iterable)
-            .cast<String>()
-            .map(Stave.fromJson)
-            .toBuiltList();
+  MusicChunk.fromJson(Map<String, dynamic> json) : minorChunks = BuiltList();
 
   @override
   Map<String, dynamic> toJson() => {
         'type': 'music',
-        'minorChunks':
-            minorChunks.map((stave) => stave.toJson).toList(growable: false),
+        'minorChunks': minorChunks.map((stave) => {}).toList(growable: false),
       };
 
   @override

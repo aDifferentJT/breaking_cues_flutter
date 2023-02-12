@@ -1,5 +1,7 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:client/packed_button_row.dart';
+import 'package:client/text_field.dart';
+import 'package:core/deck.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
@@ -108,16 +110,65 @@ class BCTextFormField<T> extends BCFormField<T> {
     required void Function(T?) onChange,
     required final Color backgroundColour,
   }) {
-    return CupertinoTextFormFieldRow(
+    return BCTextField(
+      value: getter(value),
       padding: const EdgeInsets.all(2),
-      initialValue: getter(value),
       style: ColourPalette.of(context).bodyStyle,
-      autofocus: autofocus,
       maxLines: null,
       onChanged: (text) => onChange(setter(value)(text)),
       onTap: onTap,
-      cursorColor: ColourPalette.of(context).foreground,
+      cursorColour: ColourPalette.of(context).foreground,
     );
+  }
+}
+
+@immutable
+class BCOptionalTextFormField<T> extends BCFormField<T> {
+  final String? Function(T) getter;
+  final String default_;
+  final T? Function(String?) Function(T) setter;
+  final bool autofocus;
+  final void Function()? onTap;
+
+  const BCOptionalTextFormField({
+    required super.label,
+    required this.getter,
+    required this.default_,
+    required this.setter,
+    this.autofocus = false,
+    this.onTap,
+  });
+
+  @override
+  Widget _input({
+    required BuildContext context,
+    required T value,
+    required void Function(T?) onChange,
+    required final Color backgroundColour,
+  }) {
+    return Row(children: [
+      BCTextField(
+        value: getter(value) ?? default_,
+        padding: const EdgeInsets.all(2),
+        style: ColourPalette.of(context).bodyStyle.copyWith(
+              color: getter(value) != null
+                  ? ColourPalette.of(context).active
+                  : null,
+            ),
+        maxLines: null,
+        onChanged: (text) => onChange(setter(value)(text)),
+        onTap: onTap,
+        cursorColour: ColourPalette.of(context).foreground,
+      ).expanded(),
+      Icon(
+        Icons.restore,
+        color: getter(value) == null
+            ? ColourPalette.of(context).active
+            : ColourPalette.of(context).foreground,
+      )
+          .gestureDetector(onTap: () => onChange(setter(value)(null)))
+          .padding(const EdgeInsets.all(4)),
+    ]);
   }
 }
 
@@ -137,6 +188,118 @@ class BCIntFormField<T> extends BCTextFormField<T> {
               return null;
             }
             return setter(value)(x);
+          },
+        );
+}
+
+@immutable
+class BCDoubleFormField<T> extends BCTextFormField<T> {
+  BCDoubleFormField({
+    required super.label,
+    required double Function(T) getter,
+    required T Function(double) Function(T) setter,
+    super.autofocus = false,
+    super.onTap,
+  }) : super(
+          getter: (value) => getter(value).toString(),
+          setter: (value) => (text) {
+            final x = double.tryParse(text);
+            if (x == null) {
+              return null;
+            }
+            return setter(value)(x);
+          },
+        );
+}
+
+@immutable
+class BCOptionalDoubleFormField<T> extends BCOptionalTextFormField<T> {
+  BCOptionalDoubleFormField({
+    required super.label,
+    required double? Function(T) getter,
+    required double default_,
+    required T Function(double?) Function(T) setter,
+    super.autofocus = false,
+    super.onTap,
+  }) : super(
+          getter: (value) => getter(value)?.toString(),
+          default_: default_.toString(),
+          setter: (value) => (text) {
+            if (text == null) {
+              return setter(value)(null);
+            }
+            final x = double.tryParse(text);
+            if (x == null) {
+              return null;
+            }
+            return setter(value)(x);
+          },
+        );
+}
+
+String _colourToString(Colour colour) =>
+    "${colour.r.toRadixString(16).padLeft(2, '0')}"
+    "${colour.g.toRadixString(16).padLeft(2, '0')}"
+    "${colour.b.toRadixString(16).padLeft(2, '0')}"
+    "${colour.a.toRadixString(16).padLeft(2, '0')}";
+
+@immutable
+class BCColourFormField<T> extends BCTextFormField<T> {
+  BCColourFormField({
+    required super.label,
+    required Colour Function(T) getter,
+    required T Function(Colour) Function(T) setter,
+    super.autofocus = false,
+    super.onTap,
+  }) : super(
+          getter: (value) => _colourToString(getter(value)),
+          setter: (value) => (text) {
+            if (RegExp(r'^[0-9a-fA-F]{8}$').hasMatch(text)) {
+              return setter(value)(Colour(
+                r: int.parse(text.substring(0, 2), radix: 16),
+                g: int.parse(text.substring(2, 4), radix: 16),
+                b: int.parse(text.substring(4, 6), radix: 16),
+                a: int.parse(text.substring(6, 8), radix: 16),
+              ));
+            } else {
+              return null;
+            }
+          },
+        );
+}
+
+@immutable
+class BCOptionalColourFormField<T> extends BCOptionalTextFormField<T> {
+  BCOptionalColourFormField({
+    required super.label,
+    required Colour? Function(T) getter,
+    required Colour default_,
+    required T Function(Colour?) Function(T) setter,
+    super.autofocus = false,
+    super.onTap,
+  }) : super(
+          getter: (value) {
+            final text = getter(value);
+            if (text != null) {
+              return _colourToString(text);
+            } else {
+              return null;
+            }
+          },
+          default_: _colourToString(default_),
+          setter: (value) => (text) {
+            if (text == null) {
+              return setter(value)(null);
+            } else if (RegExp(r'^[0-9a-fA-F]{8}$').hasMatch(text)) {
+              return setter(value)(Colour(
+                r: int.parse(text.substring(0, 2), radix: 16),
+                g: int.parse(text.substring(2, 4), radix: 16),
+                b: int.parse(text.substring(4, 6), radix: 16),
+                a: int.parse(text.substring(6, 8), radix: 16),
+              ));
+            } else {
+              return null;
+            }
           },
         );
 }

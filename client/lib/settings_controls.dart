@@ -1,13 +1,13 @@
 import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:client/form.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:core/deck.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
-import 'package:output/colour_to_flutter.dart';
 
 import 'colours.dart';
 
@@ -320,431 +320,6 @@ class OptionalStyleControls extends StatelessWidget {
   }
 }
 
-String _colourToString(Color colour) =>
-    "${colour.red.toRadixString(16).padLeft(2, '0')}"
-    "${colour.green.toRadixString(16).padLeft(2, '0')}"
-    "${colour.blue.toRadixString(16).padLeft(2, '0')}"
-    "${colour.alpha.toRadixString(16).padLeft(2, '0')}";
-
-@immutable
-class ColourControl extends StatefulWidget {
-  final String label;
-  final Color colour;
-  final void Function(Color) setColour;
-
-  const ColourControl({
-    super.key,
-    required this.label,
-    required this.colour,
-    required this.setColour,
-  });
-
-  @override
-  createState() => _ColourControlState();
-}
-
-class _ColourControlState extends State<ColourControl> {
-  final _controller = TextEditingController();
-
-  void updateText() {
-    _controller.text = _colourToString(widget.colour);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    updateText();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant ColourControl oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateText();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
-        CupertinoTextField(
-          controller: _controller,
-          style: TextStyle(
-            color: ColourPalette.of(context).foreground,
-            fontFamily: "Courier",
-          ),
-          onSubmitted: (valueStr) {
-            if (valueStr.length == 8) {
-              widget.setColour(Color.fromARGB(
-                int.parse(valueStr.substring(6, 8), radix: 16),
-                int.parse(valueStr.substring(0, 2), radix: 16),
-                int.parse(valueStr.substring(2, 4), radix: 16),
-                int.parse(valueStr.substring(4, 6), radix: 16),
-              ));
-            }
-          },
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp("[0-9a-fA-F]")),
-          ],
-        ).expanded(),
-      ],
-    ).padding(const EdgeInsets.all(8));
-  }
-}
-
-@immutable
-class OptionalColourControl extends StatefulWidget {
-  final String label;
-  final Color? colour;
-  final Color defaultColour;
-  final void Function(Color?) setColour;
-
-  const OptionalColourControl({
-    super.key,
-    required this.label,
-    required this.colour,
-    required this.defaultColour,
-    required this.setColour,
-  });
-
-  @override
-  createState() => _OptionalColourControlState();
-}
-
-class _OptionalColourControlState extends State<OptionalColourControl> {
-  final _controller = TextEditingController();
-
-  void updateText() {
-    _controller.text = _colourToString(widget.colour ?? widget.defaultColour);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    updateText();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant OptionalColourControl oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateText();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
-        CupertinoTextField(
-          controller: _controller,
-          style: TextStyle(
-            color: widget.colour != null
-                ? ColourPalette.of(context).active
-                : ColourPalette.of(context).foreground,
-            fontFamily: "Courier",
-          ),
-          onSubmitted: (valueStr) {
-            if (valueStr.length == 8) {
-              widget.setColour(Color.fromARGB(
-                int.parse(valueStr.substring(6, 8), radix: 16),
-                int.parse(valueStr.substring(0, 2), radix: 16),
-                int.parse(valueStr.substring(2, 4), radix: 16),
-                int.parse(valueStr.substring(4, 6), radix: 16),
-              ));
-            }
-          },
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp("[0-9a-fA-F]")),
-          ],
-        ).expanded(),
-        Icon(
-          Icons.restore,
-          color:
-              widget.colour == null ? ColourPalette.of(context).active : null,
-        )
-            .gestureDetector(onTap: () => widget.setColour(null))
-            .padding(const EdgeInsets.all(4)),
-      ],
-    ).padding(const EdgeInsets.all(8));
-  }
-}
-
-@immutable
-class FontFamilyControl extends StatefulWidget {
-  final String label;
-  final String fontFamily;
-  final void Function(String) setFontFamily;
-
-  const FontFamilyControl({
-    super.key,
-    required this.label,
-    required this.fontFamily,
-    required this.setFontFamily,
-  });
-
-  @override
-  createState() => _FontFamilyControlState();
-}
-
-class _FontFamilyControlState extends State<FontFamilyControl> {
-  final _controller = TextEditingController();
-
-  void updateText() {
-    _controller.text = widget.fontFamily;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    updateText();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant FontFamilyControl oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateText();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
-        CupertinoTextField(
-          controller: _controller,
-          style: TextStyle(color: ColourPalette.of(context).foreground),
-          onSubmitted: widget.setFontFamily,
-        ).expanded(),
-      ],
-    ).padding(const EdgeInsets.all(8));
-  }
-}
-
-@immutable
-class OptionalFontFamilyControl extends StatefulWidget {
-  final String label;
-  final String? fontFamily;
-  final String defaultFontFamily;
-  final void Function(String?) setFontFamily;
-
-  const OptionalFontFamilyControl({
-    super.key,
-    required this.label,
-    required this.fontFamily,
-    required this.defaultFontFamily,
-    required this.setFontFamily,
-  });
-
-  @override
-  createState() => _OptionalFontFamilyControlState();
-}
-
-class _OptionalFontFamilyControlState extends State<OptionalFontFamilyControl> {
-  final _controller = TextEditingController();
-
-  void updateText() {
-    _controller.text = widget.fontFamily ?? widget.defaultFontFamily;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    updateText();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant OptionalFontFamilyControl oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateText();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
-        CupertinoTextField(
-          controller: _controller,
-          style: TextStyle(
-            color: widget.fontFamily != null
-                ? ColourPalette.of(context).active
-                : ColourPalette.of(context).foreground,
-          ),
-          onSubmitted: widget.setFontFamily,
-        ).expanded(),
-        Icon(
-          Icons.restore,
-          color: widget.fontFamily == null
-              ? ColourPalette.of(context).active
-              : null,
-        )
-            .gestureDetector(onTap: () => widget.setFontFamily(null))
-            .padding(const EdgeInsets.all(4)),
-      ],
-    ).padding(const EdgeInsets.all(8));
-  }
-}
-
-@immutable
-class SizeControl extends StatefulWidget {
-  final String label;
-  final double size;
-  final void Function(double) setSize;
-
-  const SizeControl({
-    super.key,
-    required this.label,
-    required this.size,
-    required this.setSize,
-  });
-
-  @override
-  createState() => _SizeControlState();
-}
-
-class _SizeControlState extends State<SizeControl> {
-  final _controller = TextEditingController();
-
-  void updateText() {
-    _controller.text = "${widget.size}";
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    updateText();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant SizeControl oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateText();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
-        CupertinoTextField(
-          controller: _controller,
-          style: TextStyle(color: ColourPalette.of(context).foreground),
-          onSubmitted: (valueStr) {
-            widget.setSize(double.parse(valueStr));
-          },
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp("[0-9\\.]")),
-          ],
-        ).expanded(),
-      ],
-    ).padding(const EdgeInsets.all(8));
-  }
-}
-
-@immutable
-class OptionalSizeControl extends StatefulWidget {
-  final String label;
-  final double? size;
-  final double defaultSize;
-  final void Function(double?) setSize;
-
-  const OptionalSizeControl({
-    super.key,
-    required this.label,
-    required this.size,
-    required this.defaultSize,
-    required this.setSize,
-  });
-
-  @override
-  createState() => _OptionalSizeControlState();
-}
-
-class _OptionalSizeControlState extends State<OptionalSizeControl> {
-  final _controller = TextEditingController();
-
-  void updateText() {
-    _controller.text = "${widget.size ?? widget.defaultSize}";
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    updateText();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant OptionalSizeControl oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateText();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(widget.label).aligned(AlignmentDirectional.centerStart).expanded(),
-        CupertinoTextField(
-          controller: _controller,
-          style: TextStyle(
-            color: widget.size != null
-                ? ColourPalette.of(context).active
-                : ColourPalette.of(context).foreground,
-          ),
-          onSubmitted: (valueStr) {
-            widget.setSize(double.parse(valueStr));
-          },
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp("[0-9\\.]")),
-          ],
-        ).expanded(),
-        Icon(
-          Icons.restore,
-          color: widget.size == null ? ColourPalette.of(context).active : null,
-        )
-            .gestureDetector(onTap: () => widget.setSize(null))
-            .padding(const EdgeInsets.all(4)),
-      ],
-    ).padding(const EdgeInsets.all(8));
-  }
-}
-
 @immutable
 class DisplaySettingsControl extends StatelessWidget {
   final DisplaySettings displaySettings;
@@ -763,38 +338,42 @@ class DisplaySettingsControl extends StatelessWidget {
         style: displaySettings.style,
         setStyle: (style) => update(displaySettings.withStyle(style)),
       ),
-      ColourControl(
-        label: "Background:",
-        colour: displaySettings.backgroundColour.flutter,
-        setColour: (colour) =>
-            update(displaySettings.withBackgroundColour(colour.colour)),
-      ),
-      ColourControl(
-        label: "Text Colour:",
-        colour: displaySettings.textColour.flutter,
-        setColour: (colour) =>
-            update(displaySettings.withTextColour(colour.colour)),
-      ),
-      FontFamilyControl(
-        label: "Font Family:",
-        fontFamily: displaySettings.fontFamily,
-        setFontFamily: (fontFamily) =>
-            update(displaySettings.withFontFamily(fontFamily)),
-      ),
-      SizeControl(
-        label: "Title Size:",
-        size: displaySettings.titleSize,
-        setSize: (size) => update(displaySettings.withTitleSize(size)),
-      ),
-      SizeControl(
-        label: "Subtitle Size:",
-        size: displaySettings.subtitleSize,
-        setSize: (size) => update(displaySettings.withSubtitleSize(size)),
-      ),
-      SizeControl(
-        label: "Body Size:",
-        size: displaySettings.bodySize,
-        setSize: (size) => update(displaySettings.withBodySize(size)),
+      BCForm<DisplaySettings>(
+        value: displaySettings,
+        onChange: update,
+        backgroundColour: ColourPalette.of(context).background,
+        fields: [
+          BCColourFormField(
+            label: const Text('Background:'),
+            getter: (displaySettings) => displaySettings.backgroundColour,
+            setter: (displaySettings) => displaySettings.withBackgroundColour,
+          ),
+          BCColourFormField(
+            label: const Text('Text Colour:'),
+            getter: (displaySettings) => displaySettings.textColour,
+            setter: (displaySettings) => displaySettings.withBackgroundColour,
+          ),
+          BCTextFormField(
+            label: const Text('Font Family:'),
+            getter: (displaySettings) => displaySettings.fontFamily,
+            setter: (displaySettings) => displaySettings.withFontFamily,
+          ),
+          BCDoubleFormField(
+            label: const Text('Title Size:'),
+            getter: (displaySettings) => displaySettings.titleSize,
+            setter: (displaySettings) => displaySettings.withTitleSize,
+          ),
+          BCDoubleFormField(
+            label: const Text('Subtitle Size:'),
+            getter: (displaySettings) => displaySettings.subtitleSize,
+            setter: (displaySettings) => displaySettings.withSubtitleSize,
+          ),
+          BCDoubleFormField(
+            label: const Text('Body Size:'),
+            getter: (displaySettings) => displaySettings.bodySize,
+            setter: (displaySettings) => displaySettings.withBodySize,
+          ),
+        ],
       ),
     ]);
   }
@@ -820,45 +399,48 @@ class OptionalDisplaySettingsControl extends StatelessWidget {
         style: displaySettings.style,
         setStyle: (style) => update(displaySettings.withStyle(style)),
       ),
-      OptionalColourControl(
-        label: "Background:",
-        colour: displaySettings.backgroundColour?.flutter,
-        defaultColour: defaultSettings.backgroundColour.flutter,
-        setColour: (colour) =>
-            update(displaySettings.withBackgroundColour(colour?.colour)),
-      ),
-      OptionalColourControl(
-        label: "Text Colour:",
-        colour: displaySettings.textColour?.flutter,
-        defaultColour: defaultSettings.textColour.flutter,
-        setColour: (colour) =>
-            update(displaySettings.withTextColour(colour?.colour)),
-      ),
-      OptionalFontFamilyControl(
-        label: "Font Family:",
-        fontFamily: displaySettings.fontFamily,
-        defaultFontFamily: defaultSettings.fontFamily,
-        setFontFamily: (fontFamily) =>
-            update(displaySettings.withFontFamily(fontFamily)),
-      ),
-      OptionalSizeControl(
-        label: "Title Size:",
-        size: displaySettings.titleSize,
-        defaultSize: defaultSettings.titleSize,
-        setSize: (size) => update(displaySettings.withTitleSize(size)),
-      ),
-      OptionalSizeControl(
-        label: "Subtitle Size:",
-        size: displaySettings.subtitleSize,
-        defaultSize: defaultSettings.subtitleSize,
-        setSize: (size) => update(displaySettings.withSubtitleSize(size)),
-      ),
-      OptionalSizeControl(
-        label: "Body Size:",
-        size: displaySettings.bodySize,
-        defaultSize: defaultSettings.bodySize,
-        setSize: (size) => update(displaySettings.withBodySize(size)),
-      ),
+      BCForm<OptionalDisplaySettings>(
+          value: displaySettings,
+          onChange: update,
+          backgroundColour: ColourPalette.of(context).background,
+          fields: [
+            BCOptionalColourFormField(
+              label: const Text('Background:'),
+              getter: (displaySettings) => displaySettings.backgroundColour,
+              default_: defaultSettings.backgroundColour,
+              setter: (displaySettings) => displaySettings.withBackgroundColour,
+            ),
+            BCOptionalColourFormField(
+              label: const Text('Text Colour:'),
+              getter: (displaySettings) => displaySettings.textColour,
+              default_: defaultSettings.textColour,
+              setter: (displaySettings) => displaySettings.withBackgroundColour,
+            ),
+            BCOptionalTextFormField(
+              label: const Text('Font Family:'),
+              getter: (displaySettings) => displaySettings.fontFamily,
+              default_: defaultSettings.fontFamily,
+              setter: (displaySettings) => displaySettings.withFontFamily,
+            ),
+            BCOptionalDoubleFormField(
+              label: const Text('Title Size:'),
+              getter: (displaySettings) => displaySettings.titleSize,
+              default_: defaultSettings.titleSize,
+              setter: (displaySettings) => displaySettings.withTitleSize,
+            ),
+            BCOptionalDoubleFormField(
+              label: const Text('Subtitle Size:'),
+              getter: (displaySettings) => displaySettings.subtitleSize,
+              default_: defaultSettings.subtitleSize,
+              setter: (displaySettings) => displaySettings.withSubtitleSize,
+            ),
+            BCOptionalDoubleFormField(
+              label: const Text('Body Size:'),
+              getter: (displaySettings) => displaySettings.bodySize,
+              default_: defaultSettings.bodySize,
+              setter: (displaySettings) => displaySettings.withBodySize,
+            ),
+          ]),
     ]);
   }
 }

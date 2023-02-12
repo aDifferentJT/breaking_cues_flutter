@@ -58,10 +58,7 @@ Future<http.Response?> _fetchHTML(HymnParams params) async {
   return null;
 }
 
-Future<Deck?> fetchHymn(
-  HymnParams params, {
-  required DeckKey deckKey,
-}) async {
+Future<BuiltList<Chunk>?> fetchHymn(HymnParams params) async {
   final response = await _fetchHTML(params);
   if (response == null) {
     return null;
@@ -91,20 +88,14 @@ Future<Deck?> fetchHymn(
     (verse) => BodyChunk(
       minorChunks: verse.nodes
           .where((line) => line.nodeType == html.Node.TEXT_NODE)
-          .map(
-            (line) => line.text?.trimLeadingInteger() ?? '',
-          )
+          .map((line) => line.text?.trimLeadingInteger())
           .whereNotNull()
+          .where(RegExp(r'[^\s]').hasMatch)
           .slices(params.linesPerMinorChunk)
           .map((lines) => lines.join('\n'))
           .toBuiltList(),
     ),
   );
 
-  return Deck(
-      key: deckKey,
-      chunks: [
-        TitleChunk(title: title, subtitle: author),
-        ...verses,
-      ].toBuiltList());
+  return [TitleChunk(title: title, subtitle: author), ...verses].toBuiltList();
 }

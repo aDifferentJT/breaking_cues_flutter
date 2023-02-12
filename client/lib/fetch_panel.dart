@@ -12,17 +12,17 @@ import 'left_tabs.dart';
 
 @immutable
 class _FetchButtonContent extends StatelessWidget {
-  final Future<Deck?>? deck;
+  final Future<BuiltList<Chunk>?>? chunks;
 
-  const _FetchButtonContent({required this.deck});
+  const _FetchButtonContent({required this.chunks});
 
   @override
   Widget build(BuildContext context) {
-    if (deck == null) {
+    if (chunks == null) {
       return Text('Fetch', style: ColourPalette.of(context).headingStyle);
     } else {
       return FutureBuilder(
-          future: deck,
+          future: chunks,
           builder: (context, snapshot) {
             switch (snapshot.connectionState) {
               case ConnectionState.none:
@@ -44,21 +44,24 @@ class _FetchButtonContent extends StatelessWidget {
 
 @immutable
 class _FetchButton extends StatefulWidget {
-  final Future<Deck?> Function() fetch;
-  final void Function(Deck) updateDeck;
+  final Future<BuiltList<Chunk>?> Function() fetch;
+  final void Function(BuiltList<Chunk>) updateChunks;
 
-  const _FetchButton(this.fetch, {required this.updateDeck});
+  const _FetchButton(
+    this.fetch, {
+    required this.updateChunks,
+  });
 
   @override
   createState() => _FetchButtonState();
 }
 
 class _FetchButtonState extends State<_FetchButton> {
-  Future<Deck?>? deck;
+  Future<BuiltList<Chunk>?>? chunks;
 
   @override
   Widget build(BuildContext context) {
-    return _FetchButtonContent(deck: deck)
+    return _FetchButtonContent(chunks: chunks)
         .container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -67,10 +70,10 @@ class _FetchButtonState extends State<_FetchButton> {
             ))
         .gestureDetector(
           onTap: () => setState(() {
-            deck = widget.fetch();
-            deck!.then((deck) {
-              if (deck != null) {
-                widget.updateDeck(deck);
+            chunks = widget.fetch();
+            chunks!.then((chunks) {
+              if (chunks != null) {
+                widget.updateChunks(chunks);
               }
             });
           }),
@@ -81,12 +84,10 @@ class _FetchButtonState extends State<_FetchButton> {
 
 @immutable
 class _BibleFetchPanel extends StatefulWidget {
-  final DeckKey deckKey;
-  final void Function(Deck) updateDeck;
+  final void Function(BuiltList<Chunk>) updateChunks;
 
   const _BibleFetchPanel({
-    required this.deckKey,
-    required this.updateDeck,
+    required this.updateChunks,
   });
 
   @override
@@ -128,8 +129,8 @@ class _BibleFetchPanelState extends State<_BibleFetchPanel> {
         ),
       ]).expanded(),
       _FetchButton(
-        () => fetchBible(bibleParams, deckKey: widget.deckKey),
-        updateDeck: widget.updateDeck,
+        () => fetchBible(bibleParams),
+        updateChunks: widget.updateChunks,
       ),
     ]).background(ColourPalette.of(context).background);
   }
@@ -137,12 +138,10 @@ class _BibleFetchPanelState extends State<_BibleFetchPanel> {
 
 @immutable
 class _PsalmFetchPanel extends StatefulWidget {
-  final DeckKey deckKey;
-  final void Function(Deck) updateDeck;
+  final void Function(BuiltList<Chunk>) updateChunks;
 
   const _PsalmFetchPanel({
-    required this.deckKey,
-    required this.updateDeck,
+    required this.updateChunks,
   });
 
   @override
@@ -251,8 +250,8 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
         ),
       ]).expanded(),
       _FetchButton(
-        () => fetchPsalm(psalmParams, deckKey: widget.deckKey),
-        updateDeck: widget.updateDeck,
+        () => fetchPsalm(psalmParams),
+        updateChunks: widget.updateChunks,
       ),
     ]).background(ColourPalette.of(context).background);
   }
@@ -260,12 +259,10 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
 
 @immutable
 class _HymnFetchPanel extends StatefulWidget {
-  final DeckKey deckKey;
-  final void Function(Deck) updateDeck;
+  final void Function(BuiltList<Chunk>) updateChunks;
 
   const _HymnFetchPanel({
-    required this.deckKey,
-    required this.updateDeck,
+    required this.updateChunks,
   });
 
   @override
@@ -319,8 +316,8 @@ class _HymnFetchPanelState extends State<_HymnFetchPanel> {
         ),
       ]).expanded(),
       _FetchButton(
-        () => fetchHymn(hymnParams, deckKey: widget.deckKey),
-        updateDeck: widget.updateDeck,
+        () => fetchHymn(hymnParams),
+        updateChunks: widget.updateChunks,
       ),
     ]).background(ColourPalette.of(context).background);
   }
@@ -328,13 +325,11 @@ class _HymnFetchPanelState extends State<_HymnFetchPanel> {
 
 @immutable
 class FetchPanel extends StatelessWidget {
-  final DeckKey deckKey;
-  final void Function(Deck) updateDeck;
+  final void Function(BuiltList<Chunk>) updateChunks;
 
   const FetchPanel({
     super.key,
-    required this.deckKey,
-    required this.updateDeck,
+    required this.updateChunks,
   });
 
   @override
@@ -342,15 +337,15 @@ class FetchPanel extends StatelessWidget {
     return LeftTabs(keepHiddenChildrenAlive: true, children: [
       TabEntry(
         icon: const Text("Bible").rotated(quarterTurns: 1),
-        body: _BibleFetchPanel(deckKey: deckKey, updateDeck: updateDeck),
+        body: _BibleFetchPanel(updateChunks: updateChunks),
       ),
       TabEntry(
         icon: const Text("Psalm").rotated(quarterTurns: 1),
-        body: _PsalmFetchPanel(deckKey: deckKey, updateDeck: updateDeck),
+        body: _PsalmFetchPanel(updateChunks: updateChunks),
       ),
       TabEntry(
         icon: const Text("Hymn").rotated(quarterTurns: 1),
-        body: _HymnFetchPanel(deckKey: deckKey, updateDeck: updateDeck),
+        body: _HymnFetchPanel(updateChunks: updateChunks),
       ),
     ]);
   }

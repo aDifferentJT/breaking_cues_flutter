@@ -128,10 +128,7 @@ class PsalmParams {
       );
 }
 
-Future<Deck?> fetchPsalm(
-  PsalmParams params, {
-  required DeckKey deckKey,
-}) async {
+Future<BuiltList<Chunk>?> fetchPsalm(PsalmParams params) async {
   switch (params.psalter) {
     case Psalter.bcp:
       final response = await http.get(
@@ -173,38 +170,35 @@ Future<Deck?> fetchPsalm(
               BodyChunk(minorChunks: minorChunks.toBuiltList()))
           .toBuiltList();
 
-      return Deck(
-        key: deckKey,
-        chunks: [
-          TitleChunk(
-            title: 'Psalm ${params.number}',
-            subtitle: 'Book of Common Prayer, Crown Copyright',
+      return [
+        TitleChunk(
+          title: 'Psalm ${params.number}',
+          subtitle: 'Book of Common Prayer, Crown Copyright',
+        ),
+        ...verses,
+        if (params.gloria)
+          BodyChunk(
+            minorChunks: (params.versesPerMinorChunk > 1
+                    ? [
+                        'Glory be to the Father, and to the Son,\n'
+                            'and to the Holy Ghost;\n'
+                            'As it was in the beginning, is now,\n'
+                            'and ever shall be, world without end. Amen.',
+                      ]
+                    : [
+                        'Glory be to the Father, and to the Son,\n'
+                            'and to the Holy Ghost;',
+                        'As it was in the beginning, is now,\n'
+                            'and ever shall be, world without end. Amen.',
+                      ])
+                .map(
+                  (minorChunk) => params.bold == PsalmBold.none
+                      ? minorChunk
+                      : '*$minorChunk*',
+                )
+                .toBuiltList(),
           ),
-          ...verses,
-          if (params.gloria)
-            BodyChunk(
-              minorChunks: (params.versesPerMinorChunk > 1
-                      ? [
-                          'Glory be to the Father, and to the Son,\n'
-                              'and to the Holy Ghost;\n'
-                              'As it was in the beginning, is now,\n'
-                              'and ever shall be, world without end. Amen.',
-                        ]
-                      : [
-                          'Glory be to the Father, and to the Son,\n'
-                              'and to the Holy Ghost;',
-                          'As it was in the beginning, is now,\n'
-                              'and ever shall be, world without end. Amen.',
-                        ])
-                  .map(
-                    (minorChunk) => params.bold == PsalmBold.none
-                        ? minorChunk
-                        : '*$minorChunk*',
-                  )
-                  .toBuiltList(),
-            ),
-        ].toBuiltList(),
-      );
+      ].toBuiltList();
 
     case Psalter.cw:
       final response = await http.get(
@@ -255,37 +249,34 @@ Future<Deck?> fetchPsalm(
               BodyChunk(minorChunks: minorChunks.toBuiltList()))
           .toBuiltList();
 
-      return Deck(
-        key: deckKey,
-        chunks: [
-          TitleChunk(
-            title: 'Psalm ${params.number}',
-            subtitle: "Common Worship © The Archbishops' Council 2000",
+      return [
+        TitleChunk(
+          title: 'Psalm ${params.number}',
+          subtitle: "Common Worship © The Archbishops' Council 2000",
+        ),
+        ...verses,
+        if (params.gloria)
+          BodyChunk(
+            minorChunks: (params.versesPerMinorChunk > 1
+                    ? [
+                        'Glory to the Father and to the Son\n'
+                            'and to the Holy Spirit;\n'
+                            'as it was in the beginning is now\n'
+                            'and shall be for ever. Amen.',
+                      ]
+                    : [
+                        'Glory to the Father and to the Son\n'
+                            'and to the Holy Spirit;',
+                        'as it was in the beginning is now\n'
+                            'and shall be for ever. Amen.',
+                      ])
+                .map(
+                  (minorChunk) => params.bold == PsalmBold.none
+                      ? minorChunk
+                      : '*$minorChunk*',
+                )
+                .toBuiltList(),
           ),
-          ...verses,
-          if (params.gloria)
-            BodyChunk(
-              minorChunks: (params.versesPerMinorChunk > 1
-                      ? [
-                          'Glory to the Father and to the Son\n'
-                              'and to the Holy Spirit;\n'
-                              'as it was in the beginning is now\n'
-                              'and shall be for ever. Amen.',
-                        ]
-                      : [
-                          'Glory to the Father and to the Son\n'
-                              'and to the Holy Spirit;',
-                          'as it was in the beginning is now\n'
-                              'and shall be for ever. Amen.',
-                        ])
-                  .map(
-                    (minorChunk) => params.bold == PsalmBold.none
-                        ? minorChunk
-                        : '*$minorChunk*',
-                  )
-                  .toBuiltList(),
-            ),
-        ].toBuiltList(),
-      );
+      ].toBuiltList();
   }
 }

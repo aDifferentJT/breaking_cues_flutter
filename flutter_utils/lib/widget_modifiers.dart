@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 extension WidgetModifiers on Widget {
+  Widget wrap(Widget Function(Widget) f) => f(this);
+
   Widget expanded({int flex = 1}) => Expanded(flex: flex, child: this);
 
   Widget sized({double? width, double? height}) =>
@@ -192,6 +194,48 @@ extension WidgetModifiers on Widget {
         behavior: behavior,
         excludeFromSemantics: excludeFromSemantics,
         dragStartBehavior: dragStartBehavior,
+        child: this,
+      );
+
+  Widget draggable<T extends Object>({
+    Key? key,
+    required Widget feedback,
+    T? data,
+    Axis? axis,
+    Widget? childWhenDragging,
+    Offset feedbackOffset = Offset.zero,
+    DragAnchorStrategy dragAnchorStrategy = childDragAnchorStrategy,
+    Axis? affinity,
+    int? maxSimultaneousDrags,
+    VoidCallback? onDragStarted,
+    DragUpdateCallback? onDragUpdate,
+    DraggableCanceledCallback? onDraggableCanceled,
+    DragEndCallback? onDragEnd,
+    VoidCallback? onDragCompleted,
+    bool ignoringFeedbackSemantics = true,
+    bool ignoringFeedbackPointer = true,
+    bool rootOverlay = false,
+    HitTestBehavior hitTestBehavior = HitTestBehavior.deferToChild,
+  }) =>
+      Draggable(
+        key: key,
+        feedback: feedback,
+        data: data,
+        axis: axis,
+        childWhenDragging: childWhenDragging,
+        feedbackOffset: feedbackOffset,
+        dragAnchorStrategy: dragAnchorStrategy,
+        affinity: affinity,
+        maxSimultaneousDrags: maxSimultaneousDrags,
+        onDragStarted: onDragStarted,
+        onDragUpdate: onDragUpdate,
+        onDraggableCanceled: onDraggableCanceled,
+        onDragEnd: onDragEnd,
+        onDragCompleted: onDragCompleted,
+        ignoringFeedbackSemantics: ignoringFeedbackSemantics,
+        ignoringFeedbackPointer: ignoringFeedbackPointer,
+        rootOverlay: rootOverlay,
+        hitTestBehavior: hitTestBehavior,
         child: this,
       );
 
@@ -401,6 +445,20 @@ extension WidgetModifiers on Widget {
         child: this,
       );
 
+  Widget translate({
+    Key? key,
+    required Offset offset,
+    bool transformHitTests = true,
+    FilterQuality? filterQuality,
+  }) =>
+      Transform.translate(
+        key: key,
+        offset: offset,
+        transformHitTests: transformHitTests,
+        filterQuality: filterQuality,
+        child: this,
+      );
+
   Widget constraintsTransform(
     BoxConstraints Function(BoxConstraints) constraintsTransform, {
     Key? key,
@@ -501,5 +559,15 @@ extension WidgetModifiers on Widget {
   }) =>
       CallbackShortcuts(key: key, bindings: bindings, child: this);
 
-  Widget wrap(Widget Function(Widget) f) => f(this);
+  Widget baseline({
+    Key? key,
+    required double baseline,
+    required TextBaseline baselineType,
+  }) =>
+      Baseline(
+        key: key,
+        baseline: baseline,
+        baselineType: baselineType,
+        child: this,
+      );
 }

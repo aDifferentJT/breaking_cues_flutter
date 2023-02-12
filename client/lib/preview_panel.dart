@@ -248,8 +248,9 @@ class PreviewPanelState extends State<PreviewPanel>
                         TabEntry(
                           icon: const Text("Fetch").rotated(quarterTurns: 1),
                           body: FetchPanel(
-                            deckKey: deckIndex!.deck.key,
-                            updateDeck: updateDeck,
+                            updateChunks: (chunks) => updateDeck(
+                              deckIndex!.deck.withChunks(chunks),
+                            ),
                           ),
                         ),
                         TabEntry(
