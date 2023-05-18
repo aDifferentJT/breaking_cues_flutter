@@ -92,6 +92,7 @@ abstract class BCFormField<T> {
 class BCTextFormField<T> extends BCFormField<T> {
   final String Function(T) getter;
   final T? Function(String) Function(T) setter;
+  final int? maxLines;
   final bool autofocus;
   final void Function()? onTap;
 
@@ -99,6 +100,7 @@ class BCTextFormField<T> extends BCFormField<T> {
     required super.label,
     required this.getter,
     required this.setter,
+    required this.maxLines,
     this.autofocus = false,
     this.onTap,
   });
@@ -114,7 +116,7 @@ class BCTextFormField<T> extends BCFormField<T> {
       value: getter(value),
       padding: const EdgeInsets.all(2),
       style: ColourPalette.of(context).bodyStyle,
-      maxLines: null,
+      maxLines: maxLines,
       onChanged: (text) => onChange(setter(value)(text)),
       onTap: onTap,
       cursorColour: ColourPalette.of(context).foreground,
@@ -189,6 +191,7 @@ class BCIntFormField<T> extends BCTextFormField<T> {
             }
             return setter(value)(x);
           },
+          maxLines: 1,
         );
 }
 
@@ -209,6 +212,7 @@ class BCDoubleFormField<T> extends BCTextFormField<T> {
             }
             return setter(value)(x);
           },
+          maxLines: 1,
         );
 }
 
@@ -265,6 +269,7 @@ class BCColourFormField<T> extends BCTextFormField<T> {
               return null;
             }
           },
+          maxLines: 1,
         );
 }
 

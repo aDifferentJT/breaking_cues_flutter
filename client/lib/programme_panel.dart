@@ -131,6 +131,7 @@ class ProgrammeRow extends StatelessWidget {
 }
 
 class ProgrammePanel extends StatefulWidget {
+  final StreamSink<void> requestUpdateStreamSink;
   final Stream<Programme> updateStream;
   final StreamSink<Programme> updateStreamSink;
   final Stream<DeckKey?> previewStream;
@@ -140,6 +141,7 @@ class ProgrammePanel extends StatefulWidget {
 
   const ProgrammePanel({
     super.key,
+    required this.requestUpdateStreamSink,
     required this.updateStream,
     required this.updateStreamSink,
     required this.previewStream,
@@ -149,18 +151,18 @@ class ProgrammePanel extends StatefulWidget {
   });
 
   @override
-  createState() => ProgrammePanelState();
+  createState() => _ProgrammePanelState();
 }
 
-class ProgrammePanelState extends State<ProgrammePanel> {
+class _ProgrammePanelState extends State<ProgrammePanel> {
   var programme = Programme.new_();
 
   DeckKey? previewDeck;
   Deck? liveDeck;
 
-  late final StreamSubscription<Programme> _updateStreamSubscription;
-  late final StreamSubscription<DeckKey?> _previewStreamSubscription;
-  late final StreamSubscription<Message> _liveStreamSubscription;
+  late StreamSubscription<Programme> _updateStreamSubscription;
+  late StreamSubscription<DeckKey?> _previewStreamSubscription;
+  late StreamSubscription<Message> _liveStreamSubscription;
 
   void processUpdate(Programme newProgramme) =>
       setState(() => programme = newProgramme);
@@ -202,6 +204,7 @@ class ProgrammePanelState extends State<ProgrammePanel> {
       _liveStreamSubscription.cancel();
       _liveStreamSubscription = widget.liveStream.listen(processLive);
     }
+    widget.requestUpdateStreamSink.add(null);
   }
 
   @override

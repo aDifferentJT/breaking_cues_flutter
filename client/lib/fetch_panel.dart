@@ -119,11 +119,42 @@ class _BibleFetchPanelState extends State<_BibleFetchPanel> {
               label: const Text('Query:'),
               getter: (hymnParams) => hymnParams.query,
               setter: (hymnParams) => hymnParams.withQuery,
+              maxLines: 1,
             ),
             BCTextFormField(
               label: const Text('Version:'),
               getter: (hymnParams) => hymnParams.version,
               setter: (hymnParams) => hymnParams.withVersion,
+              maxLines: 1,
+            ),
+            BCRadioFormField(
+              label: const Text('Framing:').padding(const EdgeInsets.all(4)),
+              getter: (psalmParams) => psalmParams.framing,
+              setter: (psalmParams) => psalmParams.withFraming,
+              options: [
+                BCRadioOption(
+                  value: BibleFraming.none,
+                  child: const Text('None').padding(const EdgeInsets.all(4)),
+                  colour: ColourPalette.of(context).active,
+                ),
+                BCRadioOption(
+                  value: BibleFraming.standard,
+                  child:
+                      const Text('Standard').padding(const EdgeInsets.all(4)),
+                  colour: ColourPalette.of(context).active,
+                ),
+                BCRadioOption(
+                  value: BibleFraming.gospel,
+                  child: const Text('Gospel').padding(const EdgeInsets.all(4)),
+                  colour: ColourPalette.of(context).active,
+                ),
+                BCRadioOption(
+                  value: BibleFraming.lentGospel,
+                  child: const Text('Lent Gospel')
+                      .padding(const EdgeInsets.all(4)),
+                  colour: ColourPalette.of(context).active,
+                ),
+              ].toBuiltList(),
             ),
           ],
         ),
@@ -298,6 +329,11 @@ class _HymnFetchPanelState extends State<_HymnFetchPanel> {
                 BCRadioOption(
                   value: Hymnal.neh,
                   child: const Text('NEH').padding(const EdgeInsets.all(4)),
+                  colour: ColourPalette.of(context).active,
+                ),
+                BCRadioOption(
+                  value: Hymnal.am,
+                  child: const Text('A&M').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
               ].toBuiltList(),

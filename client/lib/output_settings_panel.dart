@@ -11,11 +11,13 @@ import 'colours.dart';
 import 'settings_controls.dart';
 
 class OutputSettingsPanel extends StatefulWidget {
+  final StreamSink<void> requestUpdateStreamSink;
   final Stream<Programme> updateStream;
   final StreamSink<Programme> updateStreamSink;
 
   const OutputSettingsPanel({
     super.key,
+    required this.requestUpdateStreamSink,
     required this.updateStream,
     required this.updateStreamSink,
   });
@@ -28,7 +30,7 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
   var programme = Programme.new_();
   var selected = '';
 
-  late final StreamSubscription<Programme> _updateStreamSubscription;
+  late StreamSubscription<Programme> _updateStreamSubscription;
 
   void processUpdate(Programme newProgramme) =>
       setState(() => programme = newProgramme);
@@ -48,6 +50,7 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
       _updateStreamSubscription.cancel();
       _updateStreamSubscription = widget.updateStream.listen(processUpdate);
     }
+    widget.requestUpdateStreamSink.add(null);
   }
 
   @override

@@ -50,9 +50,14 @@ jobs:
     - name: Make server build directory
       working-directory: ./server
       run: mkdir build
-    - name: Build server
+    - name: Build server (non-Windows)
+      if: runner.os != 'Windows'
       working-directory: ./server
       run: dart compile exe -o ./build/server ./bin/server.dart
+    - name: Build server (Windows)
+      if: runner.os == 'Windows'
+      working-directory: ./server
+      run: dart compile exe -o ./build/server.exe ./bin/server.dart
     - name: Copy output web to server
       run: cp -r ./output/build/web ./server/build/output
     - name: Upload macOS Client Artefact

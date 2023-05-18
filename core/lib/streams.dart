@@ -7,86 +7,110 @@ import 'message.dart';
 import 'map_stream_sink.dart';
 import 'multiplex_stream.dart';
 
-class ClientStreams {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Programme> updateStream;
-  final StreamSink<Programme> updateStreamSink;
+abstract class ClientStreams {
+  StreamSink<void> get requestUpdateStreamSink;
+  Stream<Programme> get updateStream;
+  StreamSink<Programme> get updateStreamSink;
+  Stream<Message> get liveStream;
+  StreamSink<Message> get liveStreamSink;
+
+  void dispose();
+}
+
+class LocalClientStreams extends ClientStreams {
+  var _programme = Programme.new_();
+  Message _liveMessage = CloseMessage();
+
+  final _requestUpdateStreamController = StreamController<void>();
+  final _updateStreamController = StreamController<Programme>.broadcast();
+  final _liveStreamController = StreamController<Message>.broadcast();
+
+  late final StreamSubscription<void> _requestUpdateStreamSubscription;
+  late final StreamSubscription<Programme> _updateStreamSubscription;
+  late final StreamSubscription<Message> _liveStreamSubscription;
+
+  @override
+  StreamSink<void> get requestUpdateStreamSink =>
+      _requestUpdateStreamController.sink;
+  @override
+  Stream<Programme> get updateStream => _updateStreamController.stream;
+  @override
+  StreamSink<Programme> get updateStreamSink => _updateStreamController.sink;
+  @override
+  Stream<Message> get liveStream => _liveStreamController.stream;
+  @override
+  StreamSink<Message> get liveStreamSink => _liveStreamController.sink;
+
+  LocalClientStreams() {
+    _requestUpdateStreamSubscription =
+        _requestUpdateStreamController.stream.listen(
+      (_) {
+        _updateStreamController.add(_programme);
+        _liveStreamController.add(_liveMessage);
+      },
+    );
+    _updateStreamSubscription = _updateStreamController.stream.listen(
+      (Programme newProgramme) {
+        _programme = newProgramme;
+      },
+    );
+    _liveStreamSubscription = _liveStreamController.stream.listen(
+      (Message message) {
+        _liveMessage = message;
+      },
+    );
+  }
+
+  dispose() {
+    _liveStreamSubscription.cancel();
+    _updateStreamSubscription.cancel();
+    _requestUpdateStreamSubscription.cancel();
+
+    _liveStreamController.close();
+    _updateStreamController.close();
+    _requestUpdateStreamController.close();
+  }
+}
+
+class WebsocketClientStreams extends ClientStreams {
+  final WebSocketChannel websocketChannel;
+  @override
   final Stream<Message> liveStream;
+  @override
   final StreamSink<Message> liveStreamSink;
+  @override
+  final StreamSink<void> requestUpdateStreamSink;
+  @override
+  final Stream<Programme> updateStream;
+  @override
+  final StreamSink<Programme> updateStreamSink;
 
-  void Function() dispose;
+  WebsocketClientStreams(WebSocketChannel webSocketChannel)
+      : this._multiplexStream(
+          websocketChannel: webSocketChannel,
+          multiplexStream: MultiplexStream(webSocketChannel.stream),
+          multiplexStreamSink: MultiplexStreamSink(webSocketChannel.sink),
+        );
 
-  ClientStreams._byParts({
-    required this.requestUpdateStreamSink,
-    required this.updateStream,
-    required this.updateStreamSink,
-    required this.liveStream,
-    required this.liveStreamSink,
-    required this.dispose,
-  });
-
-  factory ClientStreams.local() {
-    final requestUpdateStream = StreamController<void>();
-    final updateStream = StreamController<Programme>.broadcast();
-    final liveStream = StreamController<Message>.broadcast();
-
-    var programme = Programme.new_();
-    Message liveMessage = CloseMessage();
-
-    final requestUpdateStreamSubscription =
-        requestUpdateStream.stream.listen((_) {
-      updateStream.add(programme);
-      liveStream.add(liveMessage);
-    });
-    final updateStreamSubscription =
-        updateStream.stream.listen((Programme newProgramme) {
-      programme = newProgramme;
-    });
-    final liveStreamSubscription = liveStream.stream.listen((Message message) {
-      liveMessage = message;
-    });
-
-    dispose() {
-      liveStreamSubscription.cancel();
-      updateStreamSubscription.cancel();
-      requestUpdateStreamSubscription.cancel();
-
-      liveStream.close();
-      updateStream.close();
-      requestUpdateStream.close();
-    }
-
-    return ClientStreams._byParts(
-      requestUpdateStreamSink: requestUpdateStream.sink,
-      updateStream: updateStream.stream,
-      updateStreamSink: updateStream.sink,
-      liveStream: liveStream.stream,
-      liveStreamSink: liveStream.sink,
-      dispose: dispose,
-    );
-  }
-
-  factory ClientStreams.websocket(WebSocketChannel webSocketChannel) {
-    final multiplexStream = MultiplexStream(webSocketChannel.stream);
-    final multiplexStreamSink = MultiplexStreamSink(webSocketChannel.sink);
-
-    return ClientStreams._byParts(
-      requestUpdateStreamSink: multiplexStreamSink['requestUpdate'],
-      updateStream: multiplexStream['update']
-          .map((event) => event as Map<String, dynamic>)
-          .map(Programme.fromJson)
-          .asBroadcastStream(),
-      updateStreamSink:
-          multiplexStreamSink['update'].map((programme) => programme.toJson()),
-      liveStream: multiplexStream['live']
-          .map((event) => event as Map<String, dynamic>)
-          .map(Message.fromJson)
-          .asBroadcastStream(),
-      liveStreamSink:
-          multiplexStreamSink['live'].map((message) => message.toJson()),
-      dispose: () {},
-    );
-  }
+  WebsocketClientStreams._multiplexStream({
+    required this.websocketChannel,
+    required final MultiplexStream multiplexStream,
+    required final MultiplexStreamSink multiplexStreamSink,
+  })  : requestUpdateStreamSink = multiplexStreamSink['requestUpdate'],
+        updateStream = multiplexStream['update']
+            .map((event) => event as Map<String, dynamic>)
+            .map(Programme.fromJson)
+            .asBroadcastStream(),
+        updateStreamSink = multiplexStreamSink['update']
+            .map((programme) => programme.toJson()),
+        liveStream = multiplexStream['live']
+            .map((event) => event as Map<String, dynamic>)
+            .map(Message.fromJson)
+            .asBroadcastStream(),
+        liveStreamSink =
+            multiplexStreamSink['live'].map((message) => message.toJson());
+  @override
+  void dispose() {}
 }
 
 void websocketServerStreams({

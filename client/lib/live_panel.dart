@@ -31,7 +31,7 @@ class LivePanelState extends State<LivePanel> {
   var defaultSettings = BuiltMap<String, DisplaySettings>();
   DeckIndex? deckIndex;
 
-  late final StreamSubscription<Message> _streamSubscription;
+  late StreamSubscription<Message> _streamSubscription;
 
   void process(Message message) {
     if (message is ShowMessage) {
@@ -64,6 +64,7 @@ class LivePanelState extends State<LivePanel> {
     super.initState();
 
     _streamSubscription = widget.stream.listen(process);
+    widget.requestUpdateStreamSink.add(null);
   }
 
   @override
@@ -73,6 +74,7 @@ class LivePanelState extends State<LivePanel> {
     if (widget.stream != oldWidget.stream) {
       _streamSubscription.cancel();
       _streamSubscription = widget.stream.listen(process);
+      widget.requestUpdateStreamSink.add(null);
     }
   }
 

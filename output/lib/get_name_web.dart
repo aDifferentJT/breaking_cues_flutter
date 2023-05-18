@@ -3,3 +3,4 @@
 import 'dart:html';
 
 String getName() => UrlSearchParams(window.location.search).get('name') ?? '';
+String getHost() => window.location.host;

@@ -2,12 +2,12 @@ import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
 @immutable
-abstract class BaseGlyph {
-  const BaseGlyph();
+abstract class Glyph {
+  const Glyph();
 }
 
 @immutable
-abstract class Clef extends BaseGlyph {
+abstract class Clef extends Glyph {
   const Clef();
 }
 
@@ -33,29 +33,69 @@ class TenorClef extends Clef {
 
 @immutable
 class NoteDuration {
-  const NoteDuration();
+  final int fractionOfSemibreve;
+  final int numAugmentationDots;
+
+  const NoteDuration({
+    required this.fractionOfSemibreve,
+    this.numAugmentationDots = 0,
+  });
+
+  NoteDuration addAugmentationDot() => NoteDuration(
+        fractionOfSemibreve: fractionOfSemibreve,
+        numAugmentationDots: numAugmentationDots + 1,
+      );
 }
 
 @immutable
-class NotePosition {
-  const NotePosition();
+class NotePitch {
+  final int distanceDownFromCentre;
+
+  const NotePitch({required this.distanceDownFromCentre});
+
+  bool operator ==(Object other) =>
+      other is NotePitch &&
+      distanceDownFromCentre == other.distanceDownFromCentre;
+
+  @override
+  int get hashCode => distanceDownFromCentre.hashCode;
 }
 
 @immutable
-class Note extends BaseGlyph {
-  final NoteDuration duration;
-  final NotePosition position;
+class Chord extends Glyph {
+  final NoteDuration? duration;
+  final BuiltSet<NotePitch> pitches;
 
-  const Note({required this.duration, required this.position});
+  const Chord({required this.duration, required this.pitches});
+
+  Chord addAugmentationDot() => Chord(
+        duration: duration?.addAugmentationDot(),
+        pitches: pitches,
+      );
+
+  Chord addPitch(NotePitch pitch) => Chord(
+        duration: duration,
+        pitches: pitches.rebuild((pitches) => pitches.add(pitch)),
+      );
 }
 
 @immutable
 class Stave {
-  final BuiltList<BaseGlyph> baseGlyphs;
+  final BuiltList<Glyph> baseGlyphs;
 
-  const Stave(
-    this.baseGlyphs,
-  );
+  const Stave(this.baseGlyphs);
 
   String get lyrics => '';
+
+  Stave withBaseGlyphs(BuiltList<Glyph> baseGlyphs) => Stave(baseGlyphs);
+  Stave rebuildBaseGlyphs(void Function(ListBuilder<Glyph>) updates) =>
+      withBaseGlyphs(baseGlyphs.rebuild(updates));
+}
+
+@immutable
+class SpacedGlyph {
+  final Glyph glyph;
+  final double width;
+
+  const SpacedGlyph(this.glyph, {required this.width});
 }

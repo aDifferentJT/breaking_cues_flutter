@@ -7,23 +7,34 @@ import 'package:meta/meta.dart';
 
 import 'deck.dart';
 
+enum BibleFraming { none, standard, gospel, lentGospel }
+
 @immutable
 class BibleParams {
   final String version;
   final String query;
+  final BibleFraming framing;
 
   const BibleParams({
     this.version = 'NRSVA',
     this.query = 'Job 3:2',
+    this.framing = BibleFraming.standard,
   });
 
   BibleParams withVersion(String version) => BibleParams(
         version: version,
         query: query,
+        framing: framing,
       );
   BibleParams withQuery(String query) => BibleParams(
         version: version,
         query: query,
+        framing: framing,
+      );
+  BibleParams withFraming(BibleFraming framing) => BibleParams(
+        version: version,
+        query: query,
+        framing: framing,
       );
 }
 
@@ -57,7 +68,8 @@ Future<BuiltList<Chunk>?> fetchBible(BibleParams params) async {
                 return true;
               } else {
                 if (element is html.Element) {
-                  return !element.className.contains('versenum') &&
+                  return !element.className.contains('chapternum') &&
+                      !element.className.contains('versenum') &&
                       !element.className.contains('footnote');
                 } else {
                   return true;
@@ -70,8 +82,93 @@ Future<BuiltList<Chunk>?> fetchBible(BibleParams params) async {
           .join(' ')
           .replaceAll(RegExp(r'\s+'), ' '));
 
-  return [
-    TitleChunk(title: params.query, subtitle: params.version),
-    BodyChunk(minorChunks: paragraphs.toBuiltList()),
-  ].toBuiltList();
+  switch (params.framing) {
+    case BibleFraming.none:
+      return [
+        TitleChunk(title: params.query, subtitle: params.version),
+        BodyChunk(minorChunks: paragraphs.toBuiltList()),
+      ].toBuiltList();
+    case BibleFraming.standard:
+      return [
+        TitleChunk(title: params.query, subtitle: params.version),
+        BodyChunk(minorChunks: paragraphs.toBuiltList()),
+        BodyChunk(
+          minorChunks: [
+            'This is the word of the Lord.\n' '*Thanks be to God.*',
+          ].toBuiltList(),
+        ),
+      ].toBuiltList();
+    case BibleFraming.gospel:
+      final gospelWriter =
+          RegExp(r'[A-Za-z]+').matchAsPrefix(params.query)?.group(0) ?? 'N';
+      return [
+        TitleChunk(title: 'The Gospel', subtitle: ''),
+        BodyChunk(
+          minorChunks: [
+            'Alleluia, alleluia.\nAlleluia, alleluia.',
+            '*Alleluia, alleluia.\nAlleluia, alleluia.*',
+          ].toBuiltList(),
+        ),
+        TitleChunk(title: 'Gospel Acclamation', subtitle: ''),
+        BodyChunk(
+          minorChunks: [
+            '*Alleluia, alleluia.\nAlleluia, alleluia.*',
+          ].toBuiltList(),
+        ),
+        BodyChunk(
+          minorChunks: [
+            'The Lord be with you\n' '*and also with you.*',
+          ].toBuiltList(),
+        ),
+        BodyChunk(
+          minorChunks: [
+            'Hear the Gospel of our Lord Jesus Christ according to $gospelWriter.\n'
+                '*Glory to you, O Lord.*',
+          ].toBuiltList(),
+        ),
+        TitleChunk(title: params.query, subtitle: params.version),
+        BodyChunk(minorChunks: paragraphs.toBuiltList()),
+        BodyChunk(
+          minorChunks: [
+            'This is the Gospel of the Lord.\n' '*Praise to you, O Christ.*',
+          ].toBuiltList(),
+        ),
+      ].toBuiltList();
+    case BibleFraming.lentGospel:
+      final gospelWriter =
+          RegExp(r'[A-Za-z]+').matchAsPrefix(params.query)?.group(0) ?? 'N';
+      return [
+        TitleChunk(title: 'The Gospel', subtitle: ''),
+        BodyChunk(
+          minorChunks: [
+            'Praise to you, O Christ,\nking of eternal glory!.',
+            '*Praise to you, O Christ,\nking of eternal glory!.*',
+          ].toBuiltList(),
+        ),
+        TitleChunk(title: 'Gospel Acclamation', subtitle: ''),
+        BodyChunk(
+          minorChunks: [
+            '*Praise to you, O Christ,\nking of eternal glory!.*',
+          ].toBuiltList(),
+        ),
+        BodyChunk(
+          minorChunks: [
+            'The Lord be with you\n' '*and also with you.*',
+          ].toBuiltList(),
+        ),
+        BodyChunk(
+          minorChunks: [
+            'Hear the Gospel of our Lord Jesus Christ according to $gospelWriter.\n'
+                '*Glory to you, O Lord.*',
+          ].toBuiltList(),
+        ),
+        TitleChunk(title: params.query, subtitle: params.version),
+        BodyChunk(minorChunks: paragraphs.toBuiltList()),
+        BodyChunk(
+          minorChunks: [
+            'This is the Gospel of the Lord.\n' '*Praise to you, O Christ.*',
+          ].toBuiltList(),
+        ),
+      ].toBuiltList();
+  }
 }

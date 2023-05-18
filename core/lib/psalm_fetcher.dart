@@ -129,6 +129,15 @@ class PsalmParams {
 }
 
 Future<BuiltList<Chunk>?> fetchPsalm(PsalmParams params) async {
+  final String title;
+  if (params.startVerse == PsalmParams().startVerse &&
+      params.endVerse == PsalmParams().endVerse) {
+    title = 'Psalm ${params.number}';
+  } else if (params.endVerse == PsalmParams().endVerse) {
+    title = 'Psalm ${params.number}: ${params.startVerse}-end';
+  } else {
+    title = 'Psalm ${params.number}: ${params.startVerse}-${params.endVerse}';
+  }
   switch (params.psalter) {
     case Psalter.bcp:
       final response = await http.get(
@@ -172,7 +181,7 @@ Future<BuiltList<Chunk>?> fetchPsalm(PsalmParams params) async {
 
       return [
         TitleChunk(
-          title: 'Psalm ${params.number}',
+          title: title,
           subtitle: 'Book of Common Prayer, Crown Copyright',
         ),
         ...verses,
@@ -251,7 +260,7 @@ Future<BuiltList<Chunk>?> fetchPsalm(PsalmParams params) async {
 
       return [
         TitleChunk(
-          title: 'Psalm ${params.number}',
+          title: title,
           subtitle: "Common Worship © The Archbishops' Council 2000",
         ),
         ...verses,

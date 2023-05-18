@@ -4,7 +4,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:client/form.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:core/deck.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
@@ -351,12 +350,13 @@ class DisplaySettingsControl extends StatelessWidget {
           BCColourFormField(
             label: const Text('Text Colour:'),
             getter: (displaySettings) => displaySettings.textColour,
-            setter: (displaySettings) => displaySettings.withBackgroundColour,
+            setter: (displaySettings) => displaySettings.withTextColour,
           ),
           BCTextFormField(
             label: const Text('Font Family:'),
             getter: (displaySettings) => displaySettings.fontFamily,
             setter: (displaySettings) => displaySettings.withFontFamily,
+            maxLines: 1,
           ),
           BCDoubleFormField(
             label: const Text('Title Size:'),

@@ -16,7 +16,7 @@ void main(List<String> args) async {
     defaultDocument: 'index.html',
   );
 
-  final serverStreams = ClientStreams.local();
+  final serverStreams = LocalClientStreams();
 
   final wsHandler = webSocketHandler((webSocket) {
     websocketServerStreams(

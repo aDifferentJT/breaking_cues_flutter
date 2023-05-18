@@ -3,14 +3,14 @@ import 'dart:math';
 import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_utils/widget_modifiers.dart';
+import 'package:intersperse/intersperse.dart';
 import 'package:petitparser/petitparser.dart';
 
 import 'package:core/deck.dart';
 import 'package:core/parser.dart';
 import 'package:flutter_utils/text_size.dart';
-import 'package:flutter_utils/widget_modifiers.dart';
 import 'package:output/display_settings_flutter.dart';
-import 'package:output/music.dart';
 
 import 'colour_to_flutter.dart';
 import 'rrect_animation.dart';
@@ -191,7 +191,7 @@ class CaptionState {
               final textHeight = textSize(
                     slide.title,
                     displaySettings.titleStyle,
-                    1720,
+                    1670,
                   ).height *
                   2;
 
@@ -206,7 +206,7 @@ class CaptionState {
                   .map((minorChunk) => textSize(
                         '$minorChunk\n',
                         displaySettings.bodyStyle,
-                        1720,
+                        1670,
                       ).height)
                   .max;
 
@@ -235,7 +235,7 @@ class CaptionState {
               final textHeight = textSize(
                     slide.title,
                     displaySettings.titleStyle,
-                    1720,
+                    1670,
                   ).height *
                   2;
 
@@ -250,7 +250,7 @@ class CaptionState {
                   .map((minorChunk) => textSize(
                         '$minorChunk\n',
                         displaySettings.bodyStyle,
-                        1720,
+                        1670,
                       ).height)
                   .max;
 
@@ -263,7 +263,6 @@ class CaptionState {
               );
             } else if (slide is MusicSlide) {
               final textHeight = 200.0;
-
               return RRect(
                 left: 100,
                 right: 100,
@@ -275,14 +274,48 @@ class CaptionState {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }
           case Style.bottomParagraphs:
-            final textHeight = 150.0;
-            return RRect(
-              left: 100,
-              right: 100,
-              top: 980 - textHeight,
-              bottom: 100,
-              radius: 25,
-            );
+            if (slide is TitleChunk) {
+              final textHeight = textSize(
+                    slide.title,
+                    displaySettings.titleStyle,
+                    1670,
+                  ).height *
+                  2;
+
+              return RRect.stadium(
+                left: 100,
+                right: 100,
+                top: 980 - textHeight,
+                bottom: 100,
+              );
+            } else if (slide is BodySlide) {
+              final textHeight = slide.minorChunks
+                  .map((minorChunk) => textSize(
+                        '$minorChunk\n',
+                        displaySettings.bodyStyle,
+                        (1720 / slide.minorChunks.length) - 50,
+                      ).height)
+                  .max;
+
+              return RRect(
+                left: 100,
+                right: 100,
+                top: 980 - textHeight,
+                bottom: 100,
+                radius: 25,
+              );
+            } else if (slide is MusicSlide) {
+              final textHeight = 200.0;
+              return RRect(
+                left: 100,
+                right: 100,
+                top: 980 - textHeight,
+                bottom: 100,
+                radius: 25,
+              );
+            } else {
+              throw ArgumentError.value(slide, 'Slide type not recognised');
+            }
           case Style.fullScreen:
             return const RRect(
               left: 0,
@@ -343,7 +376,6 @@ class CaptionState {
           case Style.rightHalf:
           case Style.topLines:
           case Style.bottomLines:
-          case Style.bottomParagraphs:
             if (slide is TitleChunk) {
               return BuiltMap.of({
                 RichText(
@@ -372,18 +404,25 @@ class CaptionState {
                 ): AlignmentDirectional.center,
               });
             } else if (slide is MusicSlide) {
-              return BuiltMap.of({
-                StaveWidget(
-                  slide.minorChunk,
-                  colour: displaySettings.textColour.flutter,
-                  textSize: displaySettings.bodySize,
-                ).constraintsTransform(
-                  (constraints) => constraints.copyWith(
-                    minWidth: constraints.maxWidth,
-                    minHeight: constraints.maxHeight,
-                  ),
-                ): AlignmentDirectional.center,
-              });
+              return BuiltMap<Widget, AlignmentGeometry>();
+              // final laidOutBaseGlyphs = LaidOutBaseGlyphs.leftAligned(
+              //   glyphs: slide.minorChunk.baseGlyphs,
+              //   sMuFL: SMuFL.of(context),
+              //   colour: displaySettings.textColour.flutter,
+              //   textSize: displaySettings.bodySize,
+              // );
+              // return BuiltMap.of({
+              //   StaveWidget(
+              //     laidOutBaseGlyphs: laidOutBaseGlyphs,
+              //     colour: displaySettings.textColour.flutter,
+              //     textSize: displaySettings.bodySize,
+              //   ).constraintsTransform(
+              //     (constraints) => constraints.copyWith(
+              //       minWidth: constraints.maxWidth,
+              //       minHeight: constraints.maxHeight,
+              //     ),
+              //   ): AlignmentDirectional.center,
+              // });
             } else {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }
@@ -419,18 +458,78 @@ class CaptionState {
                 ): AlignmentDirectional.topCenter,
               });
             } else if (slide is MusicSlide) {
+              return BuiltMap<Widget, AlignmentGeometry>();
+              // return BuiltMap.of({
+              //   StaveWidget(
+              //     slide.minorChunk,
+              //     colour: displaySettings.textColour.flutter,
+              //     textSize: displaySettings.bodySize,
+              //   ).constraintsTransform(
+              //     (constraints) => constraints.copyWith(
+              //       minWidth: constraints.maxWidth,
+              //       minHeight: constraints.maxHeight,
+              //     ),
+              //   ): AlignmentDirectional.center,
+              // });
+            } else {
+              throw ArgumentError.value(slide, 'Slide type not recognised');
+            }
+
+          case Style.bottomParagraphs:
+            if (slide is TitleChunk) {
               return BuiltMap.of({
-                StaveWidget(
-                  slide.minorChunk,
-                  colour: displaySettings.textColour.flutter,
-                  textSize: displaySettings.bodySize,
-                ).constraintsTransform(
-                  (constraints) => constraints.copyWith(
-                    minWidth: constraints.maxWidth,
-                    minHeight: constraints.maxHeight,
+                RichText(
+                  text: TextSpan(
+                    children: formatText(slide.title),
+                    style: displaySettings.titleStyle,
                   ),
+                  textAlign: TextAlign.start,
+                ): AlignmentDirectional.centerStart,
+                RichText(
+                  text: TextSpan(
+                    children: formatText(slide.subtitle),
+                    style: displaySettings.subtitleStyle,
+                  ),
+                  textAlign: TextAlign.end,
+                ): AlignmentDirectional.bottomEnd,
+              });
+            } else if (slide is BodySlide) {
+              return BuiltMap.of({
+                Row(
+                  children: slide.minorChunks
+                      .map(
+                        (minorChunk) => RichText(
+                          text: TextSpan(
+                            children: formatText(minorChunk),
+                            style: displaySettings.bodyStyle,
+                          ),
+                          textAlign: TextAlign.center,
+                        ).expanded(),
+                      )
+                      .intersperse(const SizedBox(width: 50))
+                      .toList(),
                 ): AlignmentDirectional.center,
               });
+            } else if (slide is MusicSlide) {
+              return BuiltMap<Widget, AlignmentGeometry>();
+              // final laidOutBaseGlyphs = LaidOutBaseGlyphs.leftAligned(
+              //   glyphs: slide.minorChunk.baseGlyphs,
+              //   sMuFL: SMuFL.of(context),
+              //   colour: displaySettings.textColour.flutter,
+              //   textSize: displaySettings.bodySize,
+              // );
+              // return BuiltMap.of({
+              //   StaveWidget(
+              //     laidOutBaseGlyphs: laidOutBaseGlyphs,
+              //     colour: displaySettings.textColour.flutter,
+              //     textSize: displaySettings.bodySize,
+              //   ).constraintsTransform(
+              //     (constraints) => constraints.copyWith(
+              //       minWidth: constraints.maxWidth,
+              //       minHeight: constraints.maxHeight,
+              //     ),
+              //   ): AlignmentDirectional.center,
+              // });
             } else {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }

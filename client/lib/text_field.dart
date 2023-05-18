@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_utils/widget_modifiers.dart';
 
 class BCTextField extends StatefulWidget {
   final String value;

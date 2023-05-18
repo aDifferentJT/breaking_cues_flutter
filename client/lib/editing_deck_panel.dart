@@ -115,7 +115,9 @@ class _ChunkTypeRadio extends StatelessWidget {
           filledChildColour: ColourPalette.of(context).secondaryBackground,
           onTap: () => onChangeChunk(
             MusicChunk(
-              minorChunks: [Stave(BuiltList())].toBuiltList(),
+              minorChunks: [
+                Stave(<Glyph>[const TrebleClef()].toBuiltList()),
+              ].toBuiltList(),
             ),
           ),
         ),
@@ -202,6 +204,7 @@ class _EditingChunkBody extends StatelessWidget {
             label: const Text('Title:'),
             getter: (chunk) => chunk.title,
             setter: (chunk) => chunk.withTitle,
+            maxLines: null,
             autofocus: selected(slide: 0),
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -209,6 +212,7 @@ class _EditingChunkBody extends StatelessWidget {
             label: const Text('Subtitle 1:'),
             getter: (chunk) => chunk.subtitle1,
             setter: (chunk) => chunk.withSubtitle1,
+            maxLines: null,
             autofocus: false,
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -216,6 +220,7 @@ class _EditingChunkBody extends StatelessWidget {
             label: const Text('Subtitle 2:'),
             getter: (chunk) => chunk.subtitle2,
             setter: (chunk) => chunk.withSubtitle2,
+            maxLines: null,
             autofocus: false,
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -223,6 +228,7 @@ class _EditingChunkBody extends StatelessWidget {
             label: const Text('Message:'),
             getter: (chunk) => chunk.message,
             setter: (chunk) => chunk.withMessage,
+            maxLines: null,
             autofocus: false,
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -230,6 +236,7 @@ class _EditingChunkBody extends StatelessWidget {
             label: const Text('When Stopped:'),
             getter: (chunk) => chunk.whenStopped,
             setter: (chunk) => chunk.withWhenStopped,
+            maxLines: null,
             autofocus: false,
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -243,6 +250,7 @@ class _EditingChunkBody extends StatelessWidget {
               }
               return chunk.withCountdownTo(dateTime);
             },
+            maxLines: null,
             autofocus: false,
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -265,6 +273,7 @@ class _EditingChunkBody extends StatelessWidget {
                 ),
               );
             },
+            maxLines: null,
             autofocus: false,
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -284,6 +293,7 @@ class _EditingChunkBody extends StatelessWidget {
             label: const Text('Title:'),
             getter: (chunk) => chunk.title,
             setter: (chunk) => chunk.withTitle,
+            maxLines: null,
             autofocus: selected(slide: 0),
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -291,6 +301,7 @@ class _EditingChunkBody extends StatelessWidget {
             label: const Text('Subtitle:'),
             getter: (chunk) => chunk.subtitle,
             setter: (chunk) => chunk.withSubtitle,
+            maxLines: null,
             autofocus: false,
             onTap: () => select(Index(chunk: chunkIndex, slide: 0)),
           ),
@@ -323,7 +334,12 @@ class _EditingChunkBody extends StatelessWidget {
     } else if (chunk is MusicChunk) {
       return Column(
         children: chunk.minorChunks
-            .map((stave) => MusicEditor(stave: stave))
+            .map((stave) => MusicEditor(
+                  stave: stave,
+                  onChangeStave: (stave) => onChangeChunk(
+                    MusicChunk(minorChunks: [stave].toBuiltList()),
+                  ),
+                ))
             .toList(),
       );
     } else {

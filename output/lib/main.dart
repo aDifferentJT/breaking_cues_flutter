@@ -21,9 +21,9 @@ class _OutputApp extends StatefulWidget {
 }
 
 class _OutputAppState extends State<_OutputApp> {
-  final streams = ClientStreams.websocket(
+  final streams = WebsocketClientStreams(
     WebSocketChannel.connect(
-      Uri.parse('ws://127.0.0.1:8080'),
+      Uri.parse('ws://${getHost()}'),
     ),
   );
 

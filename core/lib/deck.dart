@@ -2,7 +2,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
 import 'package:core/music.dart';
 import 'package:meta/meta.dart';
-import 'package:petitparser/petitparser.dart';
 
 @immutable
 class Colour {

@@ -8,7 +8,7 @@ import 'package:meta/meta.dart';
 import 'deck.dart';
 import 'string_utils.dart';
 
-enum Hymnal { neh }
+enum Hymnal { neh, am }
 
 @immutable
 class HymnParams {
@@ -54,8 +54,22 @@ Future<http.Response?> _fetchHTML(HymnParams params) async {
       if (response2.statusCode == 200) {
         return response2;
       }
+      return null;
+    case Hymnal.am:
+      final response1 = await http.get(
+        Uri.parse('https://hymnary.org/hymn/AM2013/${params.number}'),
+      );
+      if (response1.statusCode == 200) {
+        return response1;
+      }
+      final response2 = await http.get(
+        Uri.parse('https://hymnary.org/hymn/AM2013/${params.number}a'),
+      );
+      if (response2.statusCode == 200) {
+        return response2;
+      }
+      return null;
   }
-  return null;
 }
 
 Future<BuiltList<Chunk>?> fetchHymn(HymnParams params) async {
@@ -88,7 +102,7 @@ Future<BuiltList<Chunk>?> fetchHymn(HymnParams params) async {
     (verse) => BodyChunk(
       minorChunks: verse.nodes
           .where((line) => line.nodeType == html.Node.TEXT_NODE)
-          .map((line) => line.text?.trimLeadingInteger())
+          .map((line) => line.text?.trimLeadingInteger().replaceAll('*', ''))
           .whereNotNull()
           .where(RegExp(r'[^\s]').hasMatch)
           .slices(params.linesPerMinorChunk)

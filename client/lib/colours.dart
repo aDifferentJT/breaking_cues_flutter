@@ -8,6 +8,7 @@ class ColourPalette {
   final Color secondaryForeground;
   final Color active;
   final Color secondaryActive;
+  final Color success;
   final Color danger;
 
   const ColourPalette({
@@ -17,6 +18,7 @@ class ColourPalette {
     required this.secondaryForeground,
     required this.active,
     required this.secondaryActive,
+    required this.success,
     required this.danger,
   });
 
@@ -27,6 +29,7 @@ class ColourPalette {
         secondaryForeground = const Color(0xFFAFAFAF),
         active = const Color(0xFF007FFF),
         secondaryActive = const Color(0xFF3F5F7F),
+        success = const Color(0xFF0FDF1F),
         danger = const Color(0xFFDF0F1F);
 
   const ColourPalette.light()
@@ -36,6 +39,7 @@ class ColourPalette {
         secondaryForeground = const Color(0xFF7F7F7F),
         active = const Color(0xFF2F5FFF),
         secondaryActive = const Color(0xFF7F9FBF),
+        success = const Color(0xFF0FDF1F),
         danger = const Color(0xFFDF0F1F);
 
   TextStyle get headingStyle => TextStyle(color: foreground, fontSize: 24);
@@ -107,6 +111,11 @@ class ColourPaletteTween extends Animatable<ColourPalette> {
         secondaryActive: Color.lerp(
           begin.secondaryActive,
           end.secondaryActive,
+          t,
+        )!,
+        success: Color.lerp(
+          begin.success,
+          end.success,
           t,
         )!,
         danger: Color.lerp(
