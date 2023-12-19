@@ -153,8 +153,7 @@ class DigitalCountdown extends StatelessWidget {
       : digitWidth = '0123456789'
             .runes
             .map((char) => textSize(
-                  String.fromCharCode(char),
-                  style,
+                  TextSpan(text: String.fromCharCode(char), style: style),
                   double.infinity,
                 ).width)
             .max;

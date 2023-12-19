@@ -38,7 +38,9 @@ class _TextFieldState extends State<BCTextField> {
   void didUpdateWidget(covariant BCTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    controller.value = controller.value.copyWith(text: widget.value);
+    if (widget.value != oldWidget.value) {
+      controller.value = controller.value.copyWith(text: widget.value);
+    }
   }
 
   @override

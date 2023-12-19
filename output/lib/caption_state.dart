@@ -189,8 +189,10 @@ class CaptionState {
           case Style.topLines:
             if (slide is TitleChunk) {
               final textHeight = textSize(
-                    slide.title,
-                    displaySettings.titleStyle,
+                    TextSpan(
+                      children: formatText(slide.title),
+                      style: displaySettings.titleStyle,
+                    ),
                     1670,
                   ).height *
                   2;
@@ -204,8 +206,10 @@ class CaptionState {
             } else if (slide is BodySlide) {
               final textHeight = slide.minorChunks
                   .map((minorChunk) => textSize(
-                        '$minorChunk\n',
-                        displaySettings.bodyStyle,
+                        TextSpan(
+                          children: formatText('$minorChunk\n'),
+                          style: displaySettings.bodyStyle,
+                        ),
                         1670,
                       ).height)
                   .max;
@@ -233,8 +237,10 @@ class CaptionState {
           case Style.bottomLines:
             if (slide is TitleChunk) {
               final textHeight = textSize(
-                    slide.title,
-                    displaySettings.titleStyle,
+                    TextSpan(
+                      children: formatText(slide.title),
+                      style: displaySettings.titleStyle,
+                    ),
                     1670,
                   ).height *
                   2;
@@ -248,8 +254,10 @@ class CaptionState {
             } else if (slide is BodySlide) {
               final textHeight = slide.minorChunks
                   .map((minorChunk) => textSize(
-                        '$minorChunk\n',
-                        displaySettings.bodyStyle,
+                        TextSpan(
+                          children: formatText('$minorChunk\n'),
+                          style: displaySettings.bodyStyle,
+                        ),
                         1670,
                       ).height)
                   .max;
@@ -276,8 +284,10 @@ class CaptionState {
           case Style.bottomParagraphs:
             if (slide is TitleChunk) {
               final textHeight = textSize(
-                    slide.title,
-                    displaySettings.titleStyle,
+                    TextSpan(
+                      children: formatText(slide.title),
+                      style: displaySettings.titleStyle,
+                    ),
                     1670,
                   ).height *
                   2;
@@ -291,8 +301,10 @@ class CaptionState {
             } else if (slide is BodySlide) {
               final textHeight = slide.minorChunks
                   .map((minorChunk) => textSize(
-                        '$minorChunk\n',
-                        displaySettings.bodyStyle,
+                        TextSpan(
+                          children: formatText('$minorChunk\n'),
+                          style: displaySettings.bodyStyle,
+                        ),
                         (1720 / slide.minorChunks.length) - 50,
                       ).height)
                   .max;
@@ -335,11 +347,9 @@ class CaptionState {
           case Style.leftQuarter:
           case Style.leftThird:
           case Style.leftHalf:
-          case Style.leftTwoThirds:
           case Style.rightQuarter:
           case Style.rightThird:
           case Style.rightHalf:
-          case Style.rightTwoThirds:
           case Style.topLines:
           case Style.bottomLines:
           case Style.bottomParagraphs:
@@ -359,6 +369,8 @@ class CaptionState {
               );
             }
 
+          case Style.leftTwoThirds:
+          case Style.rightTwoThirds:
           case Style.fullScreen:
             return const EdgeInsets.all(100);
         }

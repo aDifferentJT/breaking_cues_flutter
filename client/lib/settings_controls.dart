@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:core/deck.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
 import 'colours.dart';
@@ -320,12 +322,86 @@ class OptionalStyleControls extends StatelessWidget {
 }
 
 @immutable
+class CopyableText extends StatefulWidget {
+  final String text;
+
+  const CopyableText(this.text, {super.key});
+
+  @override
+  CopyableTextState createState() => CopyableTextState();
+}
+
+class CopyableTextState extends State<CopyableText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController opacityController;
+  final Animatable<double> opacity = TweenSequence([
+    TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 1),
+    TweenSequenceItem(tween: ConstantTween(1.0), weight: 1),
+    TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 1),
+  ]);
+
+  @override
+  void initState() {
+    super.initState();
+
+    opacityController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    )..addListener(() => setState(() {}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: AlignmentDirectional.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.doc_on_clipboard,
+              color: ColourPalette.of(context).active,
+            ).padding(const EdgeInsets.all(2)),
+            Text(
+              widget.text,
+              style: TextStyle(
+                color: ColourPalette.of(context).active,
+                decoration: TextDecoration.underline,
+              ),
+            ).padding(const EdgeInsets.all(2)),
+          ],
+        ),
+        Text(
+          "Copied",
+          style: TextStyle(
+            color: ColourPalette.of(context).active,
+            fontSize: 24,
+          ),
+          textAlign: TextAlign.center,
+        )
+            .container(
+              color: ColourPalette.of(context).background,
+            )
+            .opacity(opacity.evaluate(opacityController))
+            .positionedFill,
+      ],
+    ).gestureDetector(onTap: () async {
+      await Clipboard.setData(ClipboardData(text: widget.text));
+      opacityController.reset();
+      opacityController.forward();
+    });
+  }
+}
+
+@immutable
 class DisplaySettingsControl extends StatelessWidget {
+  final String name;
   final DisplaySettings displaySettings;
   final void Function(DisplaySettings) update;
 
   const DisplaySettingsControl({
     super.key,
+    required this.name,
     required this.displaySettings,
     required this.update,
   });
@@ -375,6 +451,31 @@ class DisplaySettingsControl extends StatelessWidget {
           ),
         ],
       ),
+      FutureBuilder(
+        future: NetworkInterface.list(
+          includeLoopback: true,
+          includeLinkLocal: true,
+        ),
+        builder: (context, interfaces) {
+          if (interfaces.data case final interfaces?) {
+            return Column(
+              children: interfaces
+                  .expand((interface) => interface.addresses)
+                  .where((address) => address.type == InternetAddressType.IPv4)
+                  .map(
+                (address) {
+                  final url = 'http://${address.address}:8080/?name=$name';
+                  return CopyableText(url);
+                },
+              ).toList(growable: false),
+            ).padding(const EdgeInsets.all(5));
+          } else if (interfaces.error case final error?) {
+            return Text('Error loading URLs: $error');
+          } else {
+            return const Text('Loading URLs');
+          }
+        },
+      )
     ]);
   }
 }
@@ -543,32 +644,75 @@ class DisplaySettingsPanel extends StatefulWidget {
 
 class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
   String? selected;
+  final newOutputNameController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      children: widget.displaySettings.entries.map((entry) {
-        return _FoldingRow(
-          header: Text(entry.key),
-          body: DisplaySettingsControl(
-            displaySettings: entry.value,
-            update: (newSettings) => widget.update(
-              widget.displaySettings
-                  .rebuild((builder) => builder[entry.key] = newSettings),
-            ),
+      children: [
+        ...widget.displaySettings.entries.map((entry) {
+          return _FoldingRow(
+            header: Text(entry.key),
+            body: DisplaySettingsControl(
+              name: entry.key,
+              displaySettings: entry.value,
+              update: (newSettings) => widget.update(
+                widget.displaySettings
+                    .rebuild((builder) => builder[entry.key] = newSettings),
+              ),
+            )
+                .container(color: ColourPalette.of(context).secondaryBackground)
+                .padding(const EdgeInsets.only(left: 16, bottom: 8)),
+            selected: selected == entry.key,
+            toggleSelect: () {
+              if (selected == entry.key) {
+                setState(() => selected = null);
+              } else {
+                setState(() => selected = entry.key);
+              }
+            },
+          );
+        }),
+        Row(children: [
+          Icon(
+            CupertinoIcons.add,
+            color: ColourPalette.of(context).foreground,
           )
-              .container(color: ColourPalette.of(context).secondaryBackground)
-              .padding(const EdgeInsets.only(left: 16, bottom: 8)),
-          selected: selected == entry.key,
-          toggleSelect: () {
-            if (selected == entry.key) {
-              setState(() => selected = null);
-            } else {
-              setState(() => selected = entry.key);
-            }
-          },
-        );
-      }).toList(growable: false),
+              .gestureDetector(
+                onTap: () => widget.update(
+                  widget.displaySettings.rebuild(
+                    (settingsBuilder) {
+                      settingsBuilder.addAll({
+                        newOutputNameController.text:
+                            const DisplaySettings.default_(),
+                      });
+                      newOutputNameController.text = '';
+                    },
+                  ),
+                ),
+              )
+              .padding(const EdgeInsets.only(left: 5, top: 5, bottom: 5)),
+          CupertinoTextFormFieldRow(
+            controller: newOutputNameController,
+            padding: const EdgeInsets.all(0),
+            style: ColourPalette.of(context).bodyStyle,
+            maxLines: 1,
+            cursorColor: ColourPalette.of(context).foreground,
+            placeholder: 'New',
+            placeholderStyle: TextStyle(
+              color: ColourPalette.of(context).secondaryForeground,
+            ),
+          ).expanded(),
+        ])
+            .container(
+              decoration: ShapeDecoration(
+                shape: StadiumBorder(
+                  side: BorderSide(color: ColourPalette.of(context).foreground),
+                ),
+              ),
+            )
+            .padding(const EdgeInsets.all(8)),
+      ],
     );
   }
 }

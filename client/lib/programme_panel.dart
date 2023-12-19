@@ -102,8 +102,7 @@ class ProgrammeRow extends StatelessWidget {
         thickness: 1,
       ),
       Row(children: [
-        Text(label),
-        const Spacer(),
+        Expanded(child: Text(label)),
         ProgrammeRowButtons(
           rowIndex: rowIndex,
           deckKey: deckKey,

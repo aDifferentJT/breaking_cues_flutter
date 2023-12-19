@@ -1,6 +1,6 @@
 import 'dart:async';
 
-class MapStreamSink<T, S> extends StreamSink<S> {
+class MapStreamSink<T, S> implements StreamSink<S> {
   final StreamSink<T> _wrapped;
   final T Function(S) _f;
 

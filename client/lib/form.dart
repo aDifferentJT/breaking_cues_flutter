@@ -29,6 +29,16 @@ class _Input<T> extends StatefulWidget {
 
 class _InputState<T> extends State<_Input<T>> {
   bool isInvalid = false;
+  final fieldKey = UniqueKey();
+
+  @override
+  void didUpdateWidget(covariant _Input<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.value != oldWidget.value) {
+      isInvalid = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +46,7 @@ class _InputState<T> extends State<_Input<T>> {
       widget.field
           ._input(
             context: context,
+            key: fieldKey,
             value: widget.value,
             onChange: (newValue) {
               setState(() => isInvalid = newValue == null);
@@ -64,6 +75,7 @@ abstract class BCFormField<T> {
 
   Widget _input({
     required BuildContext context,
+    Key? key,
     required T value,
     required void Function(T?) onChange,
     required final Color backgroundColour,
@@ -108,11 +120,13 @@ class BCTextFormField<T> extends BCFormField<T> {
   @override
   Widget _input({
     required BuildContext context,
+    Key? key,
     required T value,
     required void Function(T?) onChange,
     required final Color backgroundColour,
   }) {
     return BCTextField(
+      key: key,
       value: getter(value),
       padding: const EdgeInsets.all(2),
       style: ColourPalette.of(context).bodyStyle,
@@ -144,11 +158,12 @@ class BCOptionalTextFormField<T> extends BCFormField<T> {
   @override
   Widget _input({
     required BuildContext context,
+    Key? key,
     required T value,
     required void Function(T?) onChange,
     required final Color backgroundColour,
   }) {
-    return Row(children: [
+    return Row(key: key, children: [
       BCTextField(
         value: getter(value) ?? default_,
         padding: const EdgeInsets.all(2),
@@ -336,11 +351,13 @@ class BCTickBoxFormField<T> extends BCFormField<T> {
   @override
   Widget _input({
     required BuildContext context,
+    Key? key,
     required T value,
     required void Function(T?) onChange,
     required final Color backgroundColour,
   }) {
     return Checkbox(
+      key: key,
       value: getter(value),
       onChanged: (ticked) => onChange(setter(value)(ticked ?? getter(value))),
     ).aligned(AlignmentDirectional.centerStart);
@@ -363,11 +380,13 @@ class BCRadioFormField<T, U> extends BCFormField<T> {
   @override
   Widget _input({
     required BuildContext context,
+    Key? key,
     required T value,
     required void Function(T?) onChange,
     required final Color backgroundColour,
   }) {
     return PackedButtonRow(
+        key: key,
         buttons: options
             .map(
               (option) => PackedButton(

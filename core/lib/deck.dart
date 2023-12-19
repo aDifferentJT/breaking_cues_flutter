@@ -312,12 +312,12 @@ class OptionalDisplaySettings {
 }
 
 @immutable
-abstract class Slide {
+abstract interface class Slide {
   String get label;
 }
 
 @immutable
-abstract class Chunk {
+abstract interface class Chunk {
   BuiltList<Slide> get slides;
 
   factory Chunk.fromJson(Map<String, dynamic> json) {
@@ -337,7 +337,7 @@ abstract class Chunk {
 }
 
 @immutable
-class CountdownChunk with Chunk, Slide {
+class CountdownChunk implements Chunk, Slide {
   final String title;
   final String subtitle1;
   final String subtitle2;
@@ -490,7 +490,7 @@ class CountdownChunk with Chunk, Slide {
 }
 
 @immutable
-class TitleChunk with Chunk, Slide {
+class TitleChunk implements Chunk, Slide {
   final String title;
   final String subtitle;
 
@@ -532,7 +532,7 @@ class TitleChunk with Chunk, Slide {
 }
 
 @immutable
-class BodySlide with Slide {
+class BodySlide implements Slide {
   final BuiltList<String> minorChunks;
   final int minorIndex;
 
@@ -545,7 +545,7 @@ class BodySlide with Slide {
 }
 
 @immutable
-class BodyChunk with Chunk {
+class BodyChunk implements Chunk {
   final BuiltList<String> minorChunks;
 
   const BodyChunk({required this.minorChunks});
@@ -584,7 +584,7 @@ class BodyChunk with Chunk {
 }
 
 @immutable
-class MusicSlide with Slide {
+class MusicSlide implements Slide {
   final BuiltList<Stave> minorChunks;
   final int minorIndex;
 
@@ -597,7 +597,7 @@ class MusicSlide with Slide {
 }
 
 @immutable
-class MusicChunk with Chunk {
+class MusicChunk implements Chunk {
   final BuiltList<Stave> minorChunks;
 
   const MusicChunk({required this.minorChunks});
@@ -731,7 +731,7 @@ class Deck {
   bool operator ==(Object other) =>
       other is Deck &&
       key == other.key &&
-      // displaySettings == other.displaySettings && TODO
+      displaySettings == other.displaySettings &&
       comment == other.comment &&
       chunks == other.chunks;
 

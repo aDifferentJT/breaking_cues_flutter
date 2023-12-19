@@ -20,7 +20,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.18.2 <3.0.0'
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: ">=3.16.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -41,8 +42,11 @@ dependencies:
   collection: ^1.16.0
   meta: ^1.8.0
   built_collection: ^5.1.1
-  web_socket_channel: ^2.2.0
-  file_picker: ^5.2.4
+  web_socket_channel: ^2.4.0
+  file_picker: ^6.1.1
+  shelf_static: ^1.1.1
+  shelf: ^1.4.1
+  mime: ^1.0.4
 
 dev_dependencies:
   flutter_test:
@@ -53,7 +57,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -62,5 +66,16 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # assets:
-  #   - ../output/web
+  assets:
+    - output/
+    - output/assets/
+    - output/assets/fonts/
+    - output/assets/packages/fonts/bravura/redist/
+    - output/assets/packages/fonts/bravura/redist/otf/
+    - output/assets/packages/fonts/Leland/
+    - output/assets/packages/fonts/smufl/metadata/
+    - output/assets/packages/fonts/urw-core35-fonts/
+    - output/assets/shaders/
+    - output/canvaskit/
+    - output/canvaskit/chromium/
+    - output/icons/

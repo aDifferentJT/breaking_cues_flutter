@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-Size textSize(String text, TextStyle style, double width) {
+Size textSize(TextSpan text, double width) {
   final TextPainter textPainter = TextPainter(
-    text: TextSpan(text: text, style: style),
+    text: text,
     maxLines: null,
     textDirection: TextDirection.ltr,
   );

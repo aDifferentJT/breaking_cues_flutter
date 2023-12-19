@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-class IotaIterator extends Iterator<int> {
+class IotaIterator implements Iterator<int> {
   IotaIterator({required int begin, this.end}) : x = begin - 1;
 
   int x = -1;

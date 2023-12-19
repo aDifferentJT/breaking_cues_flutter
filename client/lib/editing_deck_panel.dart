@@ -380,14 +380,223 @@ class _EditingMinorChunkState extends State<_EditingMinorChunk> {
   final controller = TextEditingController();
   final focusNode = FocusNode();
 
+  void moveUp() {
+    if (widget.deckIndex.index.slide > 0) {
+      widget.select(
+        Index(
+          chunk: widget.deckIndex.index.chunk,
+          slide: widget.deckIndex.index.slide - 1,
+        ),
+      );
+    } else if (widget.deckIndex.index.chunk > 0) {
+      final chunk = widget.deckIndex.index.chunk - 1;
+      widget.select(
+        Index(
+          chunk: chunk,
+          slide: widget.deckIndex.deck.chunks[chunk].slides.length - 1,
+        ),
+      );
+    }
+  }
+
+  void moveDown() {
+    if (widget.deckIndex.index.slide <
+        widget.deckIndex.deck.chunks[widget.deckIndex.index.chunk].slides
+                .length -
+            1) {
+      widget.select(
+        Index(
+          chunk: widget.deckIndex.index.chunk,
+          slide: widget.deckIndex.index.slide + 1,
+        ),
+      );
+    } else if (widget.deckIndex.index.chunk <
+        widget.deckIndex.deck.chunks.length - 1) {
+      widget.select(Index(chunk: widget.deckIndex.index.chunk + 1, slide: 0));
+    }
+  }
+
   void delete() {
+    if (widget.chunk.slides.length > 1) {
+      widget.onChangeChunk(
+        widget.chunk.rebuildMinorChunks(
+          (minorChunksBuilder) {
+            minorChunksBuilder.removeAt(widget.minorChunkIndex);
+          },
+        ),
+      );
+    } else {
+      widget.onChangeDeck(widget.deckIndex.deck.rebuildChunks((chunksBuilder) {
+        chunksBuilder.removeAt(widget.chunkIndex);
+      }));
+    }
+  }
+
+  void splitMinorChunk() {
     widget.onChangeChunk(
       widget.chunk.rebuildMinorChunks(
         (minorChunksBuilder) {
-          minorChunksBuilder.removeAt(widget.minorChunkIndex);
+          minorChunksBuilder.replaceRange(
+            widget.minorChunkIndex,
+            widget.minorChunkIndex + 1,
+            [
+              controller.text
+                  .substring(0, controller.selection.baseOffset)
+                  .trim(),
+              controller.text.substring(controller.selection.baseOffset).trim(),
+            ],
+          );
         },
       ),
     );
+    widget.select(
+      Index(
+        chunk: widget.chunkIndex,
+        slide: widget.minorChunkIndex + 1,
+      ),
+    );
+  }
+
+  void splitMajorChunk() {
+    widget.onChangeDeck(
+      widget.deckIndex.deck.rebuildChunks(
+        (chunksBuilder) {
+          chunksBuilder.replaceRange(
+            widget.deckIndex.index.chunk,
+            widget.deckIndex.index.chunk + 1,
+            [
+              BodyChunk(
+                minorChunks: widget.chunk.minorChunks
+                    .sublist(0, widget.minorChunkIndex)
+                    .rebuild(
+                  (builder) {
+                    if (controller.selection.baseOffset > 0) {
+                      builder.add(controller.text
+                          .substring(0, controller.selection.baseOffset)
+                          .trim());
+                    }
+                  },
+                ),
+              ),
+              BodyChunk(
+                minorChunks: widget.chunk.minorChunks
+                    .sublist(widget.minorChunkIndex + 1)
+                    .rebuild(
+                  (builder) {
+                    builder.insert(
+                      0,
+                      controller.text
+                          .substring(controller.selection.baseOffset)
+                          .trim(),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    widget.select(
+      Index(chunk: widget.deckIndex.index.chunk + 1, slide: 0),
+    );
+  }
+
+  void mergeWithPrevious() {
+    if (widget.minorChunkIndex == 0) {
+      if (widget.deckIndex.index.chunk != 0) {
+        final previousChunk =
+            widget.deckIndex.deck.chunks[widget.deckIndex.index.chunk - 1];
+        if (previousChunk is BodyChunk) {
+          widget.onChangeDeck(
+            widget.deckIndex.deck.rebuildChunks(
+              (chunksBuilder) {
+                chunksBuilder.replaceRange(
+                  widget.deckIndex.index.chunk - 1,
+                  widget.deckIndex.index.chunk + 1,
+                  [
+                    BodyChunk(
+                      minorChunks:
+                          previousChunk.minorChunks + widget.chunk.minorChunks,
+                    ),
+                  ],
+                );
+              },
+            ),
+          );
+          widget.select(
+            Index(
+              chunk: widget.deckIndex.index.chunk - 1,
+              slide: previousChunk.minorChunks.length,
+            ),
+          );
+        }
+      }
+    } else {
+      widget.onChangeChunk(
+        widget.chunk.rebuildMinorChunks(
+          (minorChunksBuilder) {
+            minorChunksBuilder.replaceRange(
+              widget.minorChunkIndex - 1,
+              widget.minorChunkIndex + 1,
+              [
+                '${widget.chunk.minorChunks[widget.minorChunkIndex - 1]}\n'
+                    '${widget.chunk.minorChunks[widget.minorChunkIndex]}',
+              ],
+            );
+          },
+        ),
+      );
+      widget.select(
+        Index(
+          chunk: widget.chunkIndex,
+          slide: widget.minorChunkIndex - 1,
+        ),
+      );
+    }
+  }
+
+  void mergeWithNext() {
+    if (widget.minorChunkIndex == widget.chunk.minorChunks.length - 1) {
+      if (widget.deckIndex.index.chunk !=
+          widget.deckIndex.deck.chunks.length - 1) {
+        final nextChunk =
+            widget.deckIndex.deck.chunks[widget.deckIndex.index.chunk + 1];
+        if (nextChunk is BodyChunk) {
+          widget.onChangeDeck(
+            widget.deckIndex.deck.rebuildChunks(
+              (chunksBuilder) {
+                chunksBuilder.replaceRange(
+                  widget.deckIndex.index.chunk,
+                  widget.deckIndex.index.chunk + 2,
+                  [
+                    BodyChunk(
+                      minorChunks:
+                          widget.chunk.minorChunks + nextChunk.minorChunks,
+                    ),
+                  ],
+                );
+              },
+            ),
+          );
+        }
+      }
+    } else {
+      widget.onChangeChunk(
+        widget.chunk.rebuildMinorChunks(
+          (minorChunksBuilder) {
+            minorChunksBuilder.replaceRange(
+              widget.minorChunkIndex,
+              widget.minorChunkIndex + 2,
+              [
+                '${widget.chunk.minorChunks[widget.minorChunkIndex]}\n'
+                    '${widget.chunk.minorChunks[widget.minorChunkIndex + 1]}',
+              ],
+            );
+          },
+        ),
+      );
+    }
   }
 
   @override
@@ -441,218 +650,38 @@ class _EditingMinorChunkState extends State<_EditingMinorChunk> {
       const SingleActivator(
         LogicalKeyboardKey.arrowUp,
         alt: true,
-      ): () {
-        if (widget.minorChunkIndex > 0) {
-          widget.select(
-            Index(
-              chunk: widget.chunkIndex,
-              slide: widget.minorChunkIndex - 1,
-            ),
-          );
-        }
-      },
+      ): moveUp,
       const SingleActivator(
         LogicalKeyboardKey.arrowDown,
         alt: true,
-      ): () {
-        if (widget.minorChunkIndex < widget.chunk.minorChunks.length - 1) {
-          widget.select(
-            Index(
-              chunk: widget.chunkIndex,
-              slide: widget.minorChunkIndex + 1,
-            ),
-          );
-        }
-      },
-      const SingleActivator(
-        LogicalKeyboardKey.backspace,
-        alt: true,
-      ): delete,
-      const SingleActivator(
-        LogicalKeyboardKey.delete,
-        alt: true,
-      ): delete,
-      const SingleActivator(
-        LogicalKeyboardKey.enter,
-        alt: true,
-      ): () {
-        widget.onChangeChunk(
-          widget.chunk.rebuildMinorChunks(
-            (minorChunksBuilder) {
-              minorChunksBuilder.replaceRange(
-                widget.minorChunkIndex,
-                widget.minorChunkIndex + 1,
-                [
-                  controller.text
-                      .substring(0, controller.selection.baseOffset)
-                      .trim(),
-                  controller.text
-                      .substring(controller.selection.baseOffset)
-                      .trim(),
-                ],
-              );
-            },
-          ),
-        );
-        widget.select(
-          Index(
-            chunk: widget.chunkIndex,
-            slide: widget.minorChunkIndex + 1,
-          ),
-        );
-      },
-      const SingleActivator(
-        LogicalKeyboardKey.enter,
-        alt: true,
-        shift: true,
-      ): () {
-        widget.onChangeDeck(
-          widget.deckIndex.deck.rebuildChunks(
-            (chunksBuilder) {
-              chunksBuilder.replaceRange(
-                widget.deckIndex.index.chunk,
-                widget.deckIndex.index.chunk + 1,
-                [
-                  BodyChunk(
-                    minorChunks: widget.chunk.minorChunks
-                        .sublist(0, widget.minorChunkIndex)
-                        .rebuild(
-                      (builder) {
-                        if (controller.selection.baseOffset > 0) {
-                          builder.add(controller.text
-                              .substring(0, controller.selection.baseOffset));
-                        }
-                      },
-                    ),
-                  ),
-                  BodyChunk(
-                    minorChunks: widget.chunk.minorChunks
-                        .sublist(widget.minorChunkIndex + 1)
-                        .rebuild(
-                      (builder) {
-                        if (controller.selection.baseOffset <
-                            controller.text.length) {
-                          builder.insert(
-                            0,
-                            controller.text
-                                .substring(controller.selection.baseOffset),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-        widget.select(
-          Index(chunk: widget.deckIndex.index.chunk + 1, slide: 0),
-        );
-      },
+      ): moveDown,
       const SingleActivator(
         LogicalKeyboardKey.backspace,
         alt: true,
         shift: true,
-      ): () {
-        if (widget.minorChunkIndex == 0) {
-          if (widget.deckIndex.index.chunk != 0) {
-            final previousChunk =
-                widget.deckIndex.deck.chunks[widget.deckIndex.index.chunk - 1];
-            if (previousChunk is BodyChunk) {
-              widget.onChangeDeck(
-                widget.deckIndex.deck.rebuildChunks(
-                  (chunksBuilder) {
-                    chunksBuilder.replaceRange(
-                      widget.deckIndex.index.chunk - 1,
-                      widget.deckIndex.index.chunk + 1,
-                      [
-                        BodyChunk(
-                          minorChunks: previousChunk.minorChunks +
-                              widget.chunk.minorChunks,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              );
-              widget.select(
-                Index(
-                  chunk: widget.deckIndex.index.chunk - 1,
-                  slide: previousChunk.minorChunks.length,
-                ),
-              );
-            }
-          }
-        } else {
-          widget.onChangeChunk(
-            widget.chunk.rebuildMinorChunks(
-              (minorChunksBuilder) {
-                minorChunksBuilder.replaceRange(
-                  widget.minorChunkIndex - 1,
-                  widget.minorChunkIndex + 1,
-                  [
-                    '${widget.chunk.minorChunks[widget.minorChunkIndex - 1]}\n'
-                        '${widget.chunk.minorChunks[widget.minorChunkIndex]}',
-                  ],
-                );
-              },
-            ),
-          );
-          widget.select(
-            Index(
-              chunk: widget.chunkIndex,
-              slide: widget.minorChunkIndex - 1,
-            ),
-          );
-        }
-      },
+      ): delete,
       const SingleActivator(
         LogicalKeyboardKey.delete,
         alt: true,
         shift: true,
-      ): () {
-        if (widget.minorChunkIndex == widget.chunk.minorChunks.length - 1) {
-          if (widget.deckIndex.index.chunk !=
-              widget.deckIndex.deck.chunks.length - 1) {
-            final nextChunk =
-                widget.deckIndex.deck.chunks[widget.deckIndex.index.chunk + 1];
-            if (nextChunk is BodyChunk) {
-              widget.onChangeDeck(
-                widget.deckIndex.deck.rebuildChunks(
-                  (chunksBuilder) {
-                    chunksBuilder.replaceRange(
-                      widget.deckIndex.index.chunk,
-                      widget.deckIndex.index.chunk + 2,
-                      [
-                        BodyChunk(
-                          minorChunks:
-                              widget.chunk.minorChunks + nextChunk.minorChunks,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              );
-            }
-          }
-        } else {
-          widget.onChangeChunk(
-            widget.chunk.rebuildMinorChunks(
-              (minorChunksBuilder) {
-                minorChunksBuilder.replaceRange(
-                  widget.minorChunkIndex,
-                  widget.minorChunkIndex + 2,
-                  [
-                    '${widget.chunk.minorChunks[widget.minorChunkIndex]}\n'
-                        '${widget.chunk.minorChunks[widget.minorChunkIndex + 1]}',
-                  ],
-                );
-              },
-            ),
-          );
-        }
-      },
+      ): delete,
+      const SingleActivator(
+        LogicalKeyboardKey.enter,
+        alt: true,
+      ): splitMinorChunk,
+      const SingleActivator(
+        LogicalKeyboardKey.enter,
+        alt: true,
+        shift: true,
+      ): splitMajorChunk,
+      const SingleActivator(
+        LogicalKeyboardKey.backspace,
+        alt: true,
+      ): mergeWithPrevious,
+      const SingleActivator(
+        LogicalKeyboardKey.delete,
+        alt: true,
+      ): mergeWithNext,
     });
   }
 }

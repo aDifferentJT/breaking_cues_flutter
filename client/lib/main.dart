@@ -7,8 +7,12 @@ import 'package:output/music.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:core/deck.dart';
+import 'package:core/server.dart';
 import 'package:core/streams.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
+import 'package:mime/mime.dart';
+
+import 'package:shelf/shelf.dart';
 
 import 'client_settings_panel.dart';
 import 'colours.dart';
@@ -19,7 +23,25 @@ import 'open_save.dart';
 import 'programme_panel.dart';
 import 'preview_panel.dart';
 
-void main() {
+FutureOr<Response> outputHandler(Request request) {
+  final path = switch (request.url.path) {
+    '' => 'index.html',
+    final path => path,
+  };
+  if (path.contains('..')) {
+    return Response.forbidden(null);
+  }
+  final contentType = MimeTypeResolver().lookup(path);
+  return rootBundle.loadString('output/$path').then(
+      (file) => Response.ok(request.method == 'HEAD' ? null : file, headers: {
+            if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
+            HttpHeaders.contentLengthHeader: '${file.length}',
+          }),
+      onError: (error) => Response.notFound(null));
+}
+
+void main() async {
+  runServer(outputHandler);
   runApp(const ClientApp());
 }
 
@@ -87,6 +109,8 @@ class _ClientAppState extends State<ClientApp>
     super.initState();
 
     subscribeToUpdateStream();
+
+    connect();
 
     colourPaletteController = AnimationController(
       duration: const Duration(milliseconds: 500),

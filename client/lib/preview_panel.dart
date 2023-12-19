@@ -169,13 +169,15 @@ class PreviewPanelState extends State<PreviewPanel>
 
   void select(Index index) {
     if (deckIndex != null) {
+      final newDeckIndex = DeckIndex(
+        deck: deckIndex!.deck,
+        index: index,
+      );
+      setState(() => deckIndex = newDeckIndex);
       outputStream.add(ShowMessage(
         defaultSettings: programme.defaultSettings,
         quiet: true,
-        deckIndex: DeckIndex(
-          deck: deckIndex!.deck,
-          index: index,
-        ),
+        deckIndex: newDeckIndex,
       ));
     }
   }

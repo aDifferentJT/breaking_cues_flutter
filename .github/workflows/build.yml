@@ -1,7 +1,7 @@
 name: Breaking Cues CI
 on: [push]
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     name: Build release
@@ -21,15 +21,18 @@ jobs:
       if: runner.os == 'Linux'
       run: sudo apt-get install ninja-build libgtk-3-dev
     - run: flutter doctor
-    - name: Install client dependencies
-      working-directory: ./client
-      run: flutter pub get
     - name: Install output dependencies
       working-directory: ./output
+      run: flutter pub get
+    - name: Install client dependencies
+      working-directory: ./client
       run: flutter pub get
     - name: Install server dependencies
       working-directory: ./server
       run: dart pub get
+    - name: Build output
+      working-directory: ./output
+      run: flutter build web --release
     - name: Build macOS client
       if: runner.os == 'macOS'
       working-directory: ./client
@@ -43,10 +46,11 @@ jobs:
     - name: Build Windows client
       if: runner.os == 'Windows'
       working-directory: ./client
-      run: flutter build windows --release
-    - name: Build output
-      working-directory: ./output
-      run: flutter build web --release
+      run: |
+        # Work around https://github.com/flutter/flutter/issues/70269
+        rm -r ./output
+        cp -r ../output/build/web ./output
+        flutter build windows --release
     - name: Make server build directory
       working-directory: ./server
       run: mkdir build
@@ -60,26 +64,26 @@ jobs:
       run: dart compile exe -o ./build/server.exe ./bin/server.dart
     - name: Copy output web to server
       run: cp -r ./output/build/web ./server/build/output
-    - name: Upload macOS Client Artefact
+    - name: Create release directory
+      run: mkdir release
+    - name: Get macOS Client
       if: runner.os == 'macOS'
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ runner.os }}-client
-        path: ./client/build/macos/Build/Products/Release
-    - name: Upload Linux Client Artefact
+      run: tar -czf ./release/${{ runner.os }}-client.tar.gz ./client/build/macos/Build/Products/Release/flutter_client.app
+    - name: Get Linux Client
       if: runner.os == 'Linux'
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ runner.os }}-client
-        path: ./client/build/linux/x64/release/bundle
-    - name: Upload Windows Client Artefact
+      run: tar -czf ./release/${{ runner.os }}-client.tar.gz ./client/build/linux/x64/release/bundle
+    - name: Get Windows Client
       if: runner.os == 'Windows'
-      uses: actions/upload-artifact@v3
+      run: tar -czf ./release/${{ runner.os }}-client.tar.gz ./client/build/windows/x64/runner/Release
+    - name: Get Server
+      run: tar -czf ./release/${{ runner.os }}-server.tar.gz ./server/build
+    - name: Upload Artefact
+      uses: actions/upload-artifact@v4
       with:
-        name: ${{ runner.os }}-client
-        path: ./client/build/windows/runner/Release
-    - name: Upload Server Artefact
-      uses: actions/upload-artifact@v3
+        name: ${{ runner.os }}
+        path: ./release/*
+    - name: Upload Assets to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
       with:
-        name: ${{ runner.os }}-server
-        path: ./server/build
+        files: ./release/*

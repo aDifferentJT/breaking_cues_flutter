@@ -75,7 +75,14 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
                   colour: ColourPalette.of(context).active,
                   filledChildColour:
                       ColourPalette.of(context).secondaryBackground,
-                  onTap: () => widget.updateStreamSink.add(programme), // TODO
+                  onTap: () => widget.updateStreamSink.add(
+                    programme.withDefaultSettings(
+                      programme.defaultSettings.rebuild(
+                        (settingsBuilder) => settingsBuilder
+                            .addAll({"New": const DisplaySettings.default_()}),
+                      ),
+                    ),
+                  ),
                 )
               ].toBuiltList(),
               padding: const EdgeInsets.all(1),
