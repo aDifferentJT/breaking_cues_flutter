@@ -1,12 +1,16 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:core/pubsub.dart';
+import 'package:core/streams.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:core/deck.dart';
 import 'package:core/message.dart';
+import 'package:flutter_utils/pubsub_builder.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
+import 'package:uuid/uuid.dart';
 
 import 'colours.dart';
 import 'deck_panel.dart';
@@ -75,19 +79,15 @@ class GoLiveButtons extends StatelessWidget {
 }
 
 class PreviewPanel extends StatefulWidget {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Programme> updateStream;
-  final StreamSink<Programme> updateStreamSink;
-  final Stream<DeckKey?> previewStream;
-  final StreamSink<Message> liveStreamSink;
+  final PubSub<Update> update;
+  final PubSub<DeckKeyIndex?> preview;
+  final PubSub<Message> live;
 
   const PreviewPanel({
     super.key,
-    required this.requestUpdateStreamSink,
-    required this.updateStream,
-    required this.updateStreamSink,
-    required this.previewStream,
-    required this.liveStreamSink,
+    required this.update,
+    required this.preview,
+    required this.live,
   });
 
   @override
@@ -96,125 +96,145 @@ class PreviewPanel extends StatefulWidget {
 
 class PreviewPanelState extends State<PreviewPanel>
     with SingleTickerProviderStateMixin {
-  var programme = Programme.new_();
-  DeckIndex? deckIndex;
-  bool searching = false;
+  final uuid = const Uuid().v4obj();
 
-  Index? get selected => deckIndex?.index;
+  bool isDeck = false;
+  BuiltMap<String, DisplaySettings> defaultSettings = BuiltMap();
 
-  late StreamSubscription<Programme> _updateStreamSubscription;
-  late StreamSubscription<DeckKey?> _previewStreamSubscription;
+  final previewOutput = PubSubController<Message>(initialValue: CloseMessage());
+  late CachedPubSub<(DeckIndex?, UuidValue?)> preview;
 
-  final outputStream = StreamController<Message>.broadcast();
-  Message lastMessage = CloseMessage();
-  late final StreamSubscription<Message> _outputStreamSubscription;
+  late StreamSubscription<Update> updateSubscription;
+  late StreamSubscription<(DeckIndex?, UuidValue?)> previewSubscription;
 
-  final requestPreviewUpdateStream = StreamController<void>();
-  late final StreamSubscription<void> _requestPreviewUpdateStreamSubscription;
+  void processUpdate(Update update) {
+    final newDefaultSettings = update.programme.defaultSettings;
+    if (defaultSettings != newDefaultSettings) {
+      defaultSettings = newDefaultSettings;
+    }
+  }
 
-  void processUpdate(Programme newProgramme) {
-    setState(() => programme = newProgramme);
+  void processPreview((DeckIndex?, UuidValue?) value) {
+    final (deckIndex, _) = value;
+
     if (deckIndex != null) {
-      final deck = programme.decks.cast<Deck?>().firstWhere(
-            (deck) => deck?.key == deckIndex!.deck.key,
-            orElse: () => null,
-          );
-      if (deck == null) {
-        outputStream.add(CloseMessage());
-      } else {
-        outputStream.add(ShowMessage(
-          defaultSettings: programme.defaultSettings,
-          quiet: true,
-          deckIndex: deckIndex!.withDeck(deck),
+      previewOutput.publish(ShowMessage(
+        defaultSettings: defaultSettings,
+        quiet: true,
+        deckIndex: deckIndex,
+      ));
+    } else {
+      previewOutput.publish(CloseMessage());
+    }
+
+    final newIsDeck = deckIndex != null;
+    if (isDeck != newIsDeck) {
+      setState(() => isDeck = newIsDeck);
+    }
+  }
+
+  void updateDeck(Deck deck, {required bool refresh}) {
+    // TODO
+    preview.publish((preview.value!.$1!.withDeck(deck), refresh ? null : uuid));
+  }
+
+  @deprecated
+  void select(Index index) {
+    if (preview.value != null) {
+      final (deckIndex, _) = preview.value!;
+      if (deckIndex != null) {
+        widget.preview.publish(DeckKeyIndex(
+          key: deckIndex.deck.key,
+          index: index,
         ));
       }
     }
   }
 
-  void processPreview(DeckKey? key) {
-    if (key != null) {
-      outputStream.add(ShowMessage(
-        defaultSettings: programme.defaultSettings,
-        quiet: false,
-        deckIndex: DeckIndex(
-          deck: programme.decks.firstWhere((deck) => deck.key == key),
-          index: Index.zero,
-        ),
-      ));
-    } else {
-      outputStream.add(CloseMessage());
+  void initPreviewPubSub() {
+    ((DeckIndex?, UuidValue?)?, Programme?) down(
+        (Update, DeckKeyIndex? deckKeyIndex)? value, Programme? state) {
+      final (programmeUpdate, deckKeyIndex) = value!;
+      if (deckKeyIndex == null) {
+        return (null, null);
+      } else {
+        return (
+          (
+            programmeUpdate.programme.deckIndexForKey(deckKeyIndex),
+            programmeUpdate.source,
+          ),
+          programmeUpdate.programme,
+        );
+      }
     }
-  }
 
-  void processOutput(Message message) {
-    lastMessage = message;
-    if (message is ShowMessage) {
-      setState(() => deckIndex = message.deckIndex);
-    } else if (message is CloseMessage) {
-      setState(() => deckIndex = null);
-    } else {
-      throw ArgumentError.value(message, "Message type not recognised");
+    ((Update, DeckKeyIndex?)?, Programme?) up(
+        (DeckIndex?, UuidValue?)? value, Programme? oldProgramme) {
+      final (deckIndex, source) = value!;
+      if (oldProgramme == null) {
+        return (null, null);
+      } else {
+        return (
+          deckIndex == null
+              ? (Update(programme: oldProgramme, source: source), null)
+              : (
+                  Update(
+                    programme: oldProgramme.withDecks(
+                      oldProgramme.decks
+                          .map(
+                            (deck) => deck.key == deckIndex.deck.key
+                                ? deckIndex.deck
+                                : deck,
+                          )
+                          .toBuiltList(),
+                    ),
+                    source: source,
+                  ),
+                  DeckKeyIndex(key: deckIndex.deck.key, index: deckIndex.index)
+                ),
+          oldProgramme
+        );
+      }
     }
-  }
 
-  void updateDeck(Deck newDeck) {
-    widget.updateStreamSink.add(
-      programme.withDecks(
-        programme.decks
-            .map((deck) => deck.key == newDeck.key ? newDeck : deck)
-            .toBuiltList(),
-      ),
-    );
-  }
+    preview = ZipPubSub(widget.update.borrowed, widget.preview.borrowed)
+        .filterUpwardNulls
+        .statefulMap(null, down, up)
+        .filterDownwardNulls
+        .cached();
 
-  void select(Index index) {
-    if (deckIndex != null) {
-      final newDeckIndex = DeckIndex(
-        deck: deckIndex!.deck,
-        index: index,
-      );
-      setState(() => deckIndex = newDeckIndex);
-      outputStream.add(ShowMessage(
-        defaultSettings: programme.defaultSettings,
-        quiet: true,
-        deckIndex: newDeckIndex,
-      ));
-    }
+    previewSubscription = preview.subscribe(processPreview);
   }
 
   @override
   void initState() {
     super.initState();
 
-    _updateStreamSubscription = widget.updateStream.listen(processUpdate);
-    _previewStreamSubscription = widget.previewStream.listen(processPreview);
-    _outputStreamSubscription = outputStream.stream.listen(processOutput);
-    _requestPreviewUpdateStreamSubscription = requestPreviewUpdateStream.stream
-        .listen((_) => outputStream.add(lastMessage));
-
-    widget.requestUpdateStreamSink.add(null);
+    updateSubscription = widget.update.subscribe(processUpdate);
+    initPreviewPubSub();
   }
 
   @override
   void didUpdateWidget(covariant PreviewPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.updateStream != oldWidget.updateStream) {
-      _updateStreamSubscription.cancel();
-      _updateStreamSubscription = widget.updateStream.listen(processUpdate);
+    if (widget.update != oldWidget.update) {
+      updateSubscription.cancel();
+      updateSubscription = widget.update.subscribe(processUpdate);
     }
-    if (widget.previewStream != oldWidget.previewStream) {
-      _previewStreamSubscription.cancel();
-      _previewStreamSubscription = widget.previewStream.listen(processPreview);
+    if (widget.update != oldWidget.update ||
+        widget.preview != oldWidget.preview) {
+      previewSubscription.cancel();
+      preview.dispose();
+      initPreviewPubSub();
     }
   }
 
   @override
   dispose() {
-    _requestPreviewUpdateStreamSubscription.cancel();
-    _updateStreamSubscription.cancel();
-    _previewStreamSubscription.cancel();
-    _outputStreamSubscription.cancel();
+    updateSubscription.cancel();
+    previewSubscription.cancel();
+    preview.dispose();
     super.dispose();
   }
 
@@ -223,35 +243,30 @@ class PreviewPanelState extends State<PreviewPanel>
     return Row(children: [
       LayoutBuilder(builder: (context, constraints) {
         return Column(children: [
-          (deckIndex == null
-                  ? const Text("Nothing Selected")
-                      .centered()
-                      .background(ColourPalette.of(context).background)
-                  : LeftTabs(
+          (isDeck
+                  ? LeftTabs(
                       keepHiddenChildrenAlive: false,
                       children: [
                         TabEntry(
                           icon: const Text("Preview").rotated(quarterTurns: 1),
-                          body: DeckPanel(
-                            deckIndex: deckIndex!,
+                          body: PreviewDeckPanelPubSub(
+                            update: widget.update,
+                            preview: widget.preview,
                             select: select,
                           ),
                         ),
                         TabEntry(
                           icon: const Text("Editor").rotated(quarterTurns: 1),
                           body: EditingDeckPanel(
-                            stream: outputStream.sink,
-                            defaultSettings: programme.defaultSettings,
-                            deckIndex: deckIndex!,
-                            select: select,
-                            onChange: updateDeck,
+                            deckIndex: preview,
                           ),
                         ),
                         TabEntry(
                           icon: const Text("Fetch").rotated(quarterTurns: 1),
                           body: FetchPanel(
                             updateChunks: (chunks) => updateDeck(
-                              deckIndex!.deck.withChunks(chunks),
+                              preview.value!.$1!.deck.withChunks(chunks),
+                              refresh: true,
                             ),
                           ),
                         ),
@@ -259,54 +274,101 @@ class PreviewPanelState extends State<PreviewPanel>
                           icon: const Text("Settings").rotated(quarterTurns: 1),
                           body: Column(children: [
                             Text(
-                              '${deckIndex?.deck.label ?? ''} Settings',
+                              '${preview.value?.$1?.deck.label ?? ''} Settings',
                               style: ColourPalette.of(context).headingStyle,
                             ).container(
                                 alignment: Alignment.centerLeft,
                                 padding: const EdgeInsets.all(16),
                                 color: ColourPalette.of(context)
                                     .secondaryBackground),
-                            OptionalDisplaySettingsPanel(
-                              displaySettings: deckIndex!.deck.displaySettings
-                                  .rebuild((builder) {
-                                for (final name
-                                    in programme.defaultSettings.keys) {
-                                  builder.putIfAbsent(
-                                    name,
-                                    () => const OptionalDisplaySettings(),
-                                  );
-                                }
-                              }),
-                              update: (settings) => updateDeck(
-                                deckIndex!.deck.withDisplaySettings(settings),
-                              ),
-                              defaultSettings: programme.defaultSettings,
-                            )
-                                .background(
-                                    ColourPalette.of(context).background)
-                                .expanded(),
+                            PubSubBuilder(
+                                pubSub: widget.update,
+                                builder: (context, update) {
+                                  final defaultSettings =
+                                      update?.programme.defaultSettings;
+                                  if (defaultSettings == null) {
+                                    return Text(
+                                      "Loading",
+                                      style:
+                                          ColourPalette.of(context).bodyStyle,
+                                    ).centered().background(
+                                        ColourPalette.of(context).background);
+                                  } else {
+                                    return OptionalDisplaySettingsPanel(
+                                      displaySettings: preview
+                                          .value!.$1!.deck.displaySettings
+                                          .rebuild((builder) {
+                                        for (final name
+                                            in defaultSettings.keys) {
+                                          builder.putIfAbsent(
+                                            name,
+                                            () =>
+                                                const OptionalDisplaySettings(),
+                                          );
+                                        }
+                                      }),
+                                      update: (settings) => updateDeck(
+                                        preview.value!.$1!.deck
+                                            .withDisplaySettings(settings),
+                                        refresh: true,
+                                      ),
+                                      defaultSettings: defaultSettings,
+                                    )
+                                        .background(ColourPalette.of(context)
+                                            .background)
+                                        .expanded();
+                                  }
+                                }),
                           ]),
                         ),
                       ],
-                    ))
+                    )
+                  : const Text("Nothing Selected")
+                      .centered()
+                      .background(ColourPalette.of(context).background))
               .expanded(),
-          DockedPreview(
-            requestUpdateStreamSink: requestPreviewUpdateStream.sink,
-            stream: outputStream.stream,
-            defaultSettings: programme.defaultSettings,
-            deck: deckIndex?.deck,
-            updateDeck: updateDeck,
-          ).constrained(constraints),
+          PubSubBuilder(
+            pubSub: widget.update,
+            builder: (context, update) {
+              final defaultSettings = update?.programme.defaultSettings;
+              if (defaultSettings == null) {
+                return Text(
+                  "Loading",
+                  style: ColourPalette.of(context).bodyStyle,
+                ).centered().background(ColourPalette.of(context).background);
+              } else {
+                return DockedPreview(
+                  pubSub: previewOutput,
+                  defaultSettings: defaultSettings,
+                  deck: preview.value?.$1?.deck,
+                ).constrained(constraints);
+              }
+            },
+          ),
         ]);
       }).expanded(),
-      GoLiveButtons(
-        goLive: ({required quiet}) {
-          if (deckIndex != null) {
-            widget.liveStreamSink.add(ShowMessage(
-              defaultSettings: programme.defaultSettings,
-              quiet: quiet,
-              deckIndex: deckIndex!,
-            ));
+      PubSubBuilder<Update>(
+        pubSub: widget.update,
+        builder: (context, update) {
+          final defaultSettings = update?.programme.defaultSettings;
+          if (defaultSettings == null) {
+            return Text(
+              "Loading",
+              style: ColourPalette.of(context).bodyStyle,
+            ).centered().background(ColourPalette.of(context).background);
+          } else {
+            return GoLiveButtons(
+              goLive: ({required quiet}) {
+                final deckIndex = preview.value?.$1;
+                if (deckIndex != null) {
+                  widget.live.publish(ShowMessage(
+                    defaultSettings: defaultSettings,
+                    quiet: quiet,
+                    deckIndex: deckIndex,
+                  ));
+                }
+              },
+            );
           }
         },
       ),

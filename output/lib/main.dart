@@ -32,8 +32,7 @@ class _OutputAppState extends State<_OutputApp> {
     return Directionality(
       textDirection: TextDirection.ltr,
       child: ScaledOutput(
-        requestUpdateStreamSink: streams.requestUpdateStreamSink,
-        stream: streams.liveStream,
+        pubSub: streams.live,
         name: widget.name,
       ),
     );

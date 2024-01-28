@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:core/pubsub.dart';
 import 'package:flutter/material.dart';
 
 import 'package:core/deck.dart';
@@ -12,15 +13,11 @@ import 'deck_panel.dart';
 import 'docked_preview.dart';
 
 class LivePanel extends StatefulWidget {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Message> stream;
-  final StreamSink<Message> streamSink;
+  final PubSub<Message> pubSub;
 
   const LivePanel({
     super.key,
-    required this.requestUpdateStreamSink,
-    required this.stream,
-    required this.streamSink,
+    required this.pubSub,
   });
 
   @override
@@ -48,7 +45,7 @@ class LivePanelState extends State<LivePanel> {
 
   void select(Index index) {
     if (deckIndex != null) {
-      widget.streamSink.add(ShowMessage(
+      widget.pubSub.publish(ShowMessage(
         defaultSettings: defaultSettings,
         quiet: true,
         deckIndex: DeckIndex(
@@ -63,18 +60,16 @@ class LivePanelState extends State<LivePanel> {
   void initState() {
     super.initState();
 
-    _streamSubscription = widget.stream.listen(process);
-    widget.requestUpdateStreamSink.add(null);
+    _streamSubscription = widget.pubSub.subscribe(process);
   }
 
   @override
   void didUpdateWidget(covariant LivePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.stream != oldWidget.stream) {
+    if (widget.pubSub != oldWidget.pubSub) {
       _streamSubscription.cancel();
-      _streamSubscription = widget.stream.listen(process);
-      widget.requestUpdateStreamSink.add(null);
+      _streamSubscription = widget.pubSub.subscribe(process);
     }
   }
 
@@ -101,8 +96,7 @@ class LivePanelState extends State<LivePanel> {
                         ))
                   .expanded(),
               DockedPreview(
-                requestUpdateStreamSink: widget.requestUpdateStreamSink,
-                stream: widget.stream,
+                pubSub: widget.pubSub,
                 defaultSettings: defaultSettings,
               ).constrained(constraints),
             ]);
@@ -114,7 +108,7 @@ class LivePanelState extends State<LivePanel> {
                 width: 40,
               )
               .gestureDetector(
-                onTap: () => widget.streamSink.add(CloseMessage()),
+                onTap: () => widget.pubSub.publish(CloseMessage()),
               ),
         ]).expanded(),
       ],

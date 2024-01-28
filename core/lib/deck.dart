@@ -1,6 +1,5 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
-import 'package:core/music.dart';
 import 'package:meta/meta.dart';
 
 @immutable
@@ -326,8 +325,6 @@ abstract interface class Chunk {
         return CountdownChunk.fromJson(json);
       case 'title':
         return TitleChunk.fromJson(json);
-      case 'music':
-        return MusicChunk.fromJson(json);
       default:
         return BodyChunk.fromJson(json);
     }
@@ -584,51 +581,6 @@ class BodyChunk implements Chunk {
 }
 
 @immutable
-class MusicSlide implements Slide {
-  final BuiltList<Stave> minorChunks;
-  final int minorIndex;
-
-  const MusicSlide({required this.minorChunks, required this.minorIndex});
-
-  Stave get minorChunk => minorChunks[minorIndex];
-
-  @override
-  String get label => minorChunk.lyrics;
-}
-
-@immutable
-class MusicChunk implements Chunk {
-  final BuiltList<Stave> minorChunks;
-
-  const MusicChunk({required this.minorChunks});
-
-  MusicChunk withMinorChunks(BuiltList<Stave> minorChunks) =>
-      MusicChunk(minorChunks: minorChunks);
-
-  MusicChunk.fromJson(Map<String, dynamic> json) : minorChunks = BuiltList();
-
-  @override
-  Map<String, dynamic> toJson() => {
-        'type': 'music',
-        'minorChunks': minorChunks.map((stave) => {}).toList(growable: false),
-      };
-
-  @override
-  BuiltList<MusicSlide> get slides => minorChunks
-      .mapIndexed(
-          (index, _) => MusicSlide(minorChunks: minorChunks, minorIndex: index))
-      .toBuiltList();
-
-  @override
-  bool operator ==(Object other) {
-    return other is MusicChunk && minorChunks == other.minorChunks;
-  }
-
-  @override
-  int get hashCode => Object.hashAll(minorChunks);
-}
-
-@immutable
 class DeckKey {
   final int key;
 
@@ -782,17 +734,24 @@ class DeckIndex {
         'index': index.toJson(),
       };
 
-  Slide get slide {
+  Chunk get chunk {
     if (index.chunk < deck.chunks.length) {
-      final chunk = deck.chunks[index.chunk];
-      if (index.slide >= 0 && index.slide < chunk.slides.length) {
-        return chunk.slides[index.slide];
-      }
+      return deck.chunks[index.chunk];
+    } else {
+      return const TitleChunk(title: '', subtitle: '');
     }
-    return const TitleChunk(title: '', subtitle: '');
+  }
+
+  Slide get slide {
+    if (index.slide >= 0 && index.slide < chunk.slides.length) {
+      return chunk.slides[index.slide];
+    } else {
+      return const TitleChunk(title: '', subtitle: '');
+    }
   }
 
   DeckIndex withDeck(Deck deck) => DeckIndex(deck: deck, index: index);
+  DeckIndex withIndex(Index index) => DeckIndex(deck: deck, index: index);
 
   @override
   bool operator ==(Object other) =>
@@ -800,6 +759,30 @@ class DeckIndex {
 
   @override
   int get hashCode => Object.hash(deck, index);
+}
+
+@immutable
+class DeckKeyIndex {
+  final DeckKey key;
+  final Index index;
+
+  const DeckKeyIndex({required this.key, required this.index});
+
+  DeckKeyIndex.fromJson(Map<String, dynamic> json)
+      : key = DeckKey(json['key']),
+        index = Index.fromJson(json['index']);
+
+  Map<String, dynamic> toJson() => {
+        'key': key.key,
+        'index': index.toJson(),
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is DeckKeyIndex && key == other.key && index == other.index;
+
+  @override
+  int get hashCode => Object.hash(key, index);
 }
 
 @immutable
@@ -872,4 +855,21 @@ class Programme {
   Programme withDefaultSettings(
           BuiltMap<String, DisplaySettings> defaultSettings) =>
       Programme(defaultSettings: defaultSettings, decks: decks);
+
+  Deck? deckForKey(DeckKey key) => decks.cast<Deck?>().firstWhere(
+        (deck) => deck?.key == key,
+        orElse: () => null,
+      );
+
+  DeckIndex? deckIndexForKey(DeckKeyIndex deckKeyIndex) {
+    final deck = deckForKey(deckKeyIndex.key);
+    if (deck != null) {
+      return DeckIndex(
+        deck: deck,
+        index: deckKeyIndex.index,
+      );
+    } else {
+      return null;
+    }
+  }
 }

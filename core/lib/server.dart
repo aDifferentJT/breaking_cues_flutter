@@ -13,7 +13,7 @@ void runServer(FutureOr<Response> Function(Request) outputHandler) async {
   final serverStreams = LocalClientStreams();
 
   final wsHandler = webSocketHandler((webSocket) {
-    websocketServerStreams(
+    WebsocketServerStreams(
       webSocketChannel: webSocket,
       serverStreams: serverStreams,
     );

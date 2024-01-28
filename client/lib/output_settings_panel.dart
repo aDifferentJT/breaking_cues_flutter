@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:client/packed_button_row.dart';
+import 'package:core/pubsub.dart';
+import 'package:core/streams.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:core/deck.dart';
@@ -11,15 +13,11 @@ import 'colours.dart';
 import 'settings_controls.dart';
 
 class OutputSettingsPanel extends StatefulWidget {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Programme> updateStream;
-  final StreamSink<Programme> updateStreamSink;
+  final PubSub<Update> updateStream;
 
   const OutputSettingsPanel({
     super.key,
-    required this.requestUpdateStreamSink,
     required this.updateStream,
-    required this.updateStreamSink,
   });
 
   @override
@@ -30,16 +28,16 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
   var programme = Programme.new_();
   var selected = '';
 
-  late StreamSubscription<Programme> _updateStreamSubscription;
+  late StreamSubscription<Update> _updateStreamSubscription;
 
-  void processUpdate(Programme newProgramme) =>
-      setState(() => programme = newProgramme);
+  void processUpdate(Update update) =>
+      setState(() => programme = update.programme);
 
   @override
   void initState() {
     super.initState();
 
-    _updateStreamSubscription = widget.updateStream.listen(processUpdate);
+    _updateStreamSubscription = widget.updateStream.subscribe(processUpdate);
   }
 
   @override
@@ -48,9 +46,8 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
 
     if (widget.updateStream != oldWidget.updateStream) {
       _updateStreamSubscription.cancel();
-      _updateStreamSubscription = widget.updateStream.listen(processUpdate);
+      _updateStreamSubscription = widget.updateStream.subscribe(processUpdate);
     }
-    widget.requestUpdateStreamSink.add(null);
   }
 
   @override
@@ -75,14 +72,14 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
                   colour: ColourPalette.of(context).active,
                   filledChildColour:
                       ColourPalette.of(context).secondaryBackground,
-                  onTap: () => widget.updateStreamSink.add(
-                    programme.withDefaultSettings(
+                  onTap: () => widget.updateStream.publish(Update(
+                    programme: programme.withDefaultSettings(
                       programme.defaultSettings.rebuild(
                         (settingsBuilder) => settingsBuilder
                             .addAll({"New": const DisplaySettings.default_()}),
                       ),
                     ),
-                  ),
+                  )),
                 )
               ].toBuiltList(),
               padding: const EdgeInsets.all(1),
@@ -94,8 +91,9 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
         ),
         DisplaySettingsPanel(
           displaySettings: programme.defaultSettings,
-          update: (settings) => widget.updateStreamSink
-              .add(programme.withDefaultSettings(settings)),
+          update: (settings) => widget.updateStream.publish(
+            Update(programme: programme.withDefaultSettings(settings)),
+          ),
         ).background(ColourPalette.of(context).background).expanded(),
       ],
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:core/pubsub.dart';
 import 'package:flutter/material.dart';
 import 'package:intersperse/intersperse.dart';
 
@@ -175,14 +176,12 @@ class _CountdownView extends StatelessWidget {
 
 @immutable
 class Output extends StatefulWidget {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Message> stream;
+  final PubSub<Message> pubSub;
   final String name;
 
   const Output({
     super.key,
-    required this.requestUpdateStreamSink,
-    required this.stream,
+    required this.pubSub,
     required this.name,
   });
 
@@ -255,18 +254,16 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
         AnimationController(duration: _captionTransition.duration, vsync: this)
           ..addListener(() => setState(() {}));
 
-    _streamSubscription = widget.stream.listen(process);
-
-    widget.requestUpdateStreamSink.add(null);
+    _streamSubscription = widget.pubSub.subscribe(process);
   }
 
   @override
   void didUpdateWidget(covariant Output oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.stream != oldWidget.stream) {
+    if (widget.pubSub != oldWidget.pubSub) {
       _streamSubscription.cancel();
-      _streamSubscription = widget.stream.listen(process);
+      _streamSubscription = widget.pubSub.subscribe(process);
     }
 
     if (oldWidget.name != widget.name) {
@@ -353,14 +350,12 @@ class OutputState extends State<Output> with SingleTickerProviderStateMixin {
 }
 
 class ScaledOutput extends StatelessWidget {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Message> stream;
+  final PubSub<Message> pubSub;
   final String name;
 
   const ScaledOutput({
     super.key,
-    required this.requestUpdateStreamSink,
-    required this.stream,
+    required this.pubSub,
     required this.name,
   });
 
@@ -376,8 +371,7 @@ class ScaledOutput extends StatelessWidget {
           maxWidth: 1920,
           maxHeight: 1080,
           child: Output(
-            requestUpdateStreamSink: requestUpdateStreamSink,
-            stream: stream,
+            pubSub: pubSub,
             name: name,
           ),
         ),

@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:core/pubsub.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:output/music.dart';
+import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:core/deck.dart';
@@ -33,14 +34,16 @@ FutureOr<Response> outputHandler(Request request) {
   }
   final contentType = MimeTypeResolver().lookup(path);
   return rootBundle.loadString('output/$path').then(
-      (file) => Response.ok(request.method == 'HEAD' ? null : file, headers: {
-            if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
-            HttpHeaders.contentLengthHeader: '${file.length}',
-          }),
-      onError: (error) => Response.notFound(null));
+        (file) => Response.ok(request.method == 'HEAD' ? null : file, headers: {
+          if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
+          HttpHeaders.contentLengthHeader: '${file.length}',
+        }),
+        onError: (error) => Response.notFound(null),
+      );
 }
 
-void main() async {
+void main() {
+  //debugFocusChanges = true;
   runServer(outputHandler);
   runApp(const ClientApp());
 }
@@ -54,16 +57,17 @@ class ClientApp extends StatefulWidget {
 
 class _ClientAppState extends State<ClientApp>
     with SingleTickerProviderStateMixin {
-  var programme = Programme.new_();
-  StreamSubscription<Programme>? updateStreamSubscription;
+  final uuid = const Uuid().v4obj();
+
+  var programme =
+      Programme.new_(); // Only used for saving, setState not required
+  StreamSubscription<Update>? updateStreamSubscription;
 
   void subscribeToUpdateStream() {
     updateStreamSubscription?.cancel();
-    updateStreamSubscription = streams.updateStream.listen(
-      (newProgramme) => programme = newProgramme,
+    updateStreamSubscription = pubSubs.update.subscribe(
+      (update) => programme = update.programme,
     );
-
-    streams.requestUpdateStreamSink.add(null);
   }
 
   String serverAddress = "ws://127.0.0.1:8080";
@@ -96,9 +100,9 @@ class _ClientAppState extends State<ClientApp>
   bool get connected => remoteStreams != null;
 
   final localStreams = LocalClientStreams();
-  ClientStreams get streams => remoteStreams ?? localStreams;
+  ClientStreams get pubSubs => remoteStreams ?? localStreams;
 
-  final previewStream = StreamController<DeckKey?>.broadcast();
+  final previewPubSub = PubSubController<DeckKeyIndex?>(initialValue: null);
 
   late final AnimationController colourPaletteController;
   Animatable<ColourPalette> colourPalette =
@@ -122,8 +126,8 @@ class _ClientAppState extends State<ClientApp>
   void dispose() {
     colourPaletteController.dispose();
     updateStreamSubscription?.cancel();
-    previewStream.close();
-    streams.dispose();
+    previewPubSub.dispose();
+    pubSubs.dispose();
     super.dispose();
   }
 
@@ -133,106 +137,98 @@ class _ClientAppState extends State<ClientApp>
       home: Material(
         child: SetColourPalette(
           colourPalette: colourPalette.evaluate(colourPaletteController),
-          child: SMuFLProvider(
-            child: Builder(
-              builder: (context) => Row(
-                children: [
-                  LeftTabs(
-                    keepHiddenChildrenAlive: true,
-                    children: [
-                      TabEntry(
-                        icon: const Text('Programme').rotated(quarterTurns: 1),
-                        body: ProgrammePanel(
-                          requestUpdateStreamSink:
-                              streams.requestUpdateStreamSink,
-                          updateStream: streams.updateStream,
-                          updateStreamSink: streams.updateStreamSink,
-                          previewStream: previewStream.stream,
-                          previewStreamSink: previewStream.sink,
-                          liveStream: streams.liveStream,
-                          liveStreamSink: streams.liveStreamSink,
-                        ),
+          child: Builder(
+            builder: (context) => Row(
+              children: [
+                LeftTabs(
+                  keepHiddenChildrenAlive: true,
+                  children: [
+                    TabEntry(
+                      icon: const Text('Programme').rotated(quarterTurns: 1),
+                      body: ProgrammePanel(
+                        update: pubSubs.update,
+                        preview: previewPubSub,
+                        live: pubSubs.live,
                       ),
-                      TabEntry(
-                        icon: const Text('Outputs').rotated(quarterTurns: 1),
-                        body: OutputSettingsPanel(
-                          requestUpdateStreamSink:
-                              streams.requestUpdateStreamSink,
-                          updateStream: streams.updateStream,
-                          updateStreamSink: streams.updateStreamSink,
-                        ),
+                    ),
+                    TabEntry(
+                      icon: const Text('Outputs').rotated(quarterTurns: 1),
+                      body: OutputSettingsPanel(
+                        updateStream: pubSubs.update,
                       ),
-                      TabEntry(
-                        icon: const Text('Settings').rotated(quarterTurns: 1),
-                        body: ClientSettingsPanel(
-                          serverAddress: serverAddress,
-                          setServerAddress: (newServerAddress) => setState(() {
-                            serverAddress = newServerAddress;
-                            connect();
-                          }),
-                          connected: connected,
-                          connect: connect,
-                          disconnect: disconnect,
-                          setColourPalette: (newColourPalette) {
-                            colourPaletteController.stop();
-                            colourPalette = ColourPaletteTween(
-                              begin: colourPalette
-                                  .evaluate(colourPaletteController),
-                              end: newColourPalette,
-                            );
-                            colourPaletteController.reset();
-                            colourPaletteController.forward();
-                          },
-                        ),
+                    ),
+                    TabEntry(
+                      icon: const Text('Settings').rotated(quarterTurns: 1),
+                      body: ClientSettingsPanel(
+                        serverAddress: serverAddress,
+                        setServerAddress: (newServerAddress) => setState(() {
+                          serverAddress = newServerAddress;
+                          connect();
+                        }),
+                        connected: connected,
+                        connect: connect,
+                        disconnect: disconnect,
+                        setColourPalette: (newColourPalette) {
+                          colourPaletteController.stop();
+                          colourPalette = ColourPaletteTween(
+                            begin:
+                                colourPalette.evaluate(colourPaletteController),
+                            end: newColourPalette,
+                          );
+                          colourPaletteController.reset();
+                          colourPaletteController.forward();
+                        },
                       ),
-                    ],
-                  ).expanded(),
-                  VerticalDivider(
-                    width: 5,
-                    thickness: 5,
-                    color: ColourPalette.of(context).secondaryBackground,
-                  ),
-                  PreviewPanel(
-                    requestUpdateStreamSink: streams.requestUpdateStreamSink,
-                    updateStream: streams.updateStream,
-                    updateStreamSink: streams.updateStreamSink,
-                    previewStream: previewStream.stream,
-                    liveStreamSink: streams.liveStreamSink,
-                  ).expanded(),
-                  VerticalDivider(
-                    width: 5,
-                    thickness: 5,
-                    color: ColourPalette.of(context).secondaryBackground,
-                  ),
-                  LivePanel(
-                    requestUpdateStreamSink: streams.requestUpdateStreamSink,
-                    stream: streams.liveStream,
-                    streamSink: streams.liveStreamSink,
-                  ).expanded(),
-                ],
-              ).callbackShortcuts(bindings: {
-                SingleActivator(
-                  LogicalKeyboardKey.keyN,
-                  control: !(Platform.isMacOS || Platform.isIOS),
-                  meta: Platform.isMacOS || Platform.isIOS,
-                ): () => streams.updateStreamSink.add(Programme.new_()),
-                SingleActivator(
-                  LogicalKeyboardKey.keyO,
-                  control: !(Platform.isMacOS || Platform.isIOS),
-                  meta: Platform.isMacOS || Platform.isIOS,
-                ): () async {
-                  var newProgramme = await open();
-                  if (newProgramme != null) {
-                    streams.updateStreamSink.add(newProgramme);
-                  }
-                },
-                SingleActivator(
-                  LogicalKeyboardKey.keyS,
-                  control: !(Platform.isMacOS || Platform.isIOS),
-                  meta: Platform.isMacOS || Platform.isIOS,
-                ): () => save(programme),
-              }),
-            ),
+                    ),
+                  ],
+                ).expanded(),
+                VerticalDivider(
+                  width: 5,
+                  thickness: 5,
+                  color: ColourPalette.of(context).secondaryBackground,
+                ),
+                PreviewPanel(
+                  update: pubSubs.update,
+                  preview: previewPubSub,
+                  live: pubSubs.live,
+                ).expanded(),
+                VerticalDivider(
+                  width: 5,
+                  thickness: 5,
+                  color: ColourPalette.of(context).secondaryBackground,
+                ),
+                LivePanel(
+                  pubSub: pubSubs.live,
+                ).expanded(),
+              ],
+            ).callbackShortcuts(bindings: {
+              SingleActivator(
+                LogicalKeyboardKey.keyN,
+                control: !(Platform.isMacOS || Platform.isIOS),
+                meta: Platform.isMacOS || Platform.isIOS,
+              ): () => pubSubs.update.publish(Update(
+                    programme: Programme.new_(),
+                    source: uuid,
+                  )),
+              SingleActivator(
+                LogicalKeyboardKey.keyO,
+                control: !(Platform.isMacOS || Platform.isIOS),
+                meta: Platform.isMacOS || Platform.isIOS,
+              ): () async {
+                var newProgramme = await open();
+                if (newProgramme != null) {
+                  pubSubs.update.publish(Update(
+                    programme: newProgramme,
+                    source: uuid,
+                  ));
+                }
+              },
+              SingleActivator(
+                LogicalKeyboardKey.keyS,
+                control: !(Platform.isMacOS || Platform.isIOS),
+                meta: Platform.isMacOS || Platform.isIOS,
+              ): () => save(programme),
+            }),
           ),
         ),
       ),

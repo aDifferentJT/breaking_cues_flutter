@@ -41,7 +41,7 @@ final formatTextParser = () {
 
 List<InlineSpan> formatText(String text) {
   final result = formatTextParser.parse(text);
-  if (result.isFailure) {
+  if (result is Failure) {
     print(result.message);
   }
   return result.valueOr(() => [TextSpan(text: text)]);
@@ -221,16 +221,6 @@ class CaptionState {
                 bottom: 980 - textHeight,
                 radius: 25,
               );
-            } else if (slide is MusicSlide) {
-              final textHeight = 200.0;
-
-              return RRect(
-                left: 100,
-                right: 100,
-                top: 100,
-                bottom: 980 - textHeight,
-                radius: 25,
-              );
             } else {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }
@@ -269,15 +259,6 @@ class CaptionState {
                 bottom: 100,
                 radius: 25,
               );
-            } else if (slide is MusicSlide) {
-              final textHeight = 200.0;
-              return RRect(
-                left: 100,
-                right: 100,
-                top: 980 - textHeight,
-                bottom: 100,
-                radius: 25,
-              );
             } else {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }
@@ -309,15 +290,6 @@ class CaptionState {
                       ).height)
                   .max;
 
-              return RRect(
-                left: 100,
-                right: 100,
-                top: 980 - textHeight,
-                bottom: 100,
-                radius: 25,
-              );
-            } else if (slide is MusicSlide) {
-              final textHeight = 200.0;
               return RRect(
                 left: 100,
                 right: 100,
@@ -415,26 +387,6 @@ class CaptionState {
                   textAlign: TextAlign.center,
                 ): AlignmentDirectional.center,
               });
-            } else if (slide is MusicSlide) {
-              return BuiltMap<Widget, AlignmentGeometry>();
-              // final laidOutBaseGlyphs = LaidOutBaseGlyphs.leftAligned(
-              //   glyphs: slide.minorChunk.baseGlyphs,
-              //   sMuFL: SMuFL.of(context),
-              //   colour: displaySettings.textColour.flutter,
-              //   textSize: displaySettings.bodySize,
-              // );
-              // return BuiltMap.of({
-              //   StaveWidget(
-              //     laidOutBaseGlyphs: laidOutBaseGlyphs,
-              //     colour: displaySettings.textColour.flutter,
-              //     textSize: displaySettings.bodySize,
-              //   ).constraintsTransform(
-              //     (constraints) => constraints.copyWith(
-              //       minWidth: constraints.maxWidth,
-              //       minHeight: constraints.maxHeight,
-              //     ),
-              //   ): AlignmentDirectional.center,
-              // });
             } else {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }
@@ -469,20 +421,6 @@ class CaptionState {
                   textAlign: TextAlign.center,
                 ): AlignmentDirectional.topCenter,
               });
-            } else if (slide is MusicSlide) {
-              return BuiltMap<Widget, AlignmentGeometry>();
-              // return BuiltMap.of({
-              //   StaveWidget(
-              //     slide.minorChunk,
-              //     colour: displaySettings.textColour.flutter,
-              //     textSize: displaySettings.bodySize,
-              //   ).constraintsTransform(
-              //     (constraints) => constraints.copyWith(
-              //       minWidth: constraints.maxWidth,
-              //       minHeight: constraints.maxHeight,
-              //     ),
-              //   ): AlignmentDirectional.center,
-              // });
             } else {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }
@@ -522,26 +460,6 @@ class CaptionState {
                       .toList(),
                 ): AlignmentDirectional.center,
               });
-            } else if (slide is MusicSlide) {
-              return BuiltMap<Widget, AlignmentGeometry>();
-              // final laidOutBaseGlyphs = LaidOutBaseGlyphs.leftAligned(
-              //   glyphs: slide.minorChunk.baseGlyphs,
-              //   sMuFL: SMuFL.of(context),
-              //   colour: displaySettings.textColour.flutter,
-              //   textSize: displaySettings.bodySize,
-              // );
-              // return BuiltMap.of({
-              //   StaveWidget(
-              //     laidOutBaseGlyphs: laidOutBaseGlyphs,
-              //     colour: displaySettings.textColour.flutter,
-              //     textSize: displaySettings.bodySize,
-              //   ).constraintsTransform(
-              //     (constraints) => constraints.copyWith(
-              //       minWidth: constraints.maxWidth,
-              //       minHeight: constraints.maxHeight,
-              //     ),
-              //   ): AlignmentDirectional.center,
-              // });
             } else {
               throw ArgumentError.value(slide, 'Slide type not recognised');
             }

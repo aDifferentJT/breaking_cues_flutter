@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:core/pubsub.dart';
+import 'package:core/streams.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -130,23 +132,15 @@ class ProgrammeRow extends StatelessWidget {
 }
 
 class ProgrammePanel extends StatefulWidget {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Programme> updateStream;
-  final StreamSink<Programme> updateStreamSink;
-  final Stream<DeckKey?> previewStream;
-  final StreamSink<DeckKey?> previewStreamSink;
-  final Stream<Message> liveStream;
-  final StreamSink<Message> liveStreamSink;
+  final PubSub<Update> update;
+  final PubSub<DeckKeyIndex?> preview;
+  final PubSub<Message> live;
 
   const ProgrammePanel({
     super.key,
-    required this.requestUpdateStreamSink,
-    required this.updateStream,
-    required this.updateStreamSink,
-    required this.previewStream,
-    required this.previewStreamSink,
-    required this.liveStream,
-    required this.liveStreamSink,
+    required this.update,
+    required this.preview,
+    required this.live,
   });
 
   @override
@@ -156,17 +150,18 @@ class ProgrammePanel extends StatefulWidget {
 class _ProgrammePanelState extends State<ProgrammePanel> {
   var programme = Programme.new_();
 
-  DeckKey? previewDeck;
+  DeckKeyIndex? previewDeck;
   Deck? liveDeck;
 
-  late StreamSubscription<Programme> _updateStreamSubscription;
-  late StreamSubscription<DeckKey?> _previewStreamSubscription;
+  late StreamSubscription<Update> _updateStreamSubscription;
+  late StreamSubscription<DeckKeyIndex?> _previewStreamSubscription;
   late StreamSubscription<Message> _liveStreamSubscription;
 
-  void processUpdate(Programme newProgramme) =>
-      setState(() => programme = newProgramme);
+  void processUpdate(Update update) =>
+      setState(() => programme = update.programme);
 
-  void processPreview(DeckKey? key) => setState(() => previewDeck = key);
+  void processPreview(DeckKeyIndex? deckKeyIndex) =>
+      setState(() => previewDeck = deckKeyIndex);
 
   void processLive(Message message) {
     if (message is ShowMessage) {
@@ -182,28 +177,27 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
   void initState() {
     super.initState();
 
-    _updateStreamSubscription = widget.updateStream.listen(processUpdate);
-    _previewStreamSubscription = widget.previewStream.listen(processPreview);
-    _liveStreamSubscription = widget.liveStream.listen(processLive);
+    _updateStreamSubscription = widget.update.subscribe(processUpdate);
+    _previewStreamSubscription = widget.preview.subscribe(processPreview);
+    _liveStreamSubscription = widget.live.subscribe(processLive);
   }
 
   @override
   void didUpdateWidget(covariant ProgrammePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.updateStream != oldWidget.updateStream) {
+    if (widget.update != oldWidget.update) {
       _updateStreamSubscription.cancel();
-      _updateStreamSubscription = widget.updateStream.listen(processUpdate);
+      _updateStreamSubscription = widget.update.subscribe(processUpdate);
     }
-    if (widget.previewStream != oldWidget.previewStream) {
+    if (widget.preview != oldWidget.preview) {
       _previewStreamSubscription.cancel();
-      _previewStreamSubscription = widget.previewStream.listen(processPreview);
+      _previewStreamSubscription = widget.preview.subscribe(processPreview);
     }
-    if (widget.liveStream != oldWidget.liveStream) {
+    if (widget.live != oldWidget.live) {
       _liveStreamSubscription.cancel();
-      _liveStreamSubscription = widget.liveStream.listen(processLive);
+      _liveStreamSubscription = widget.live.subscribe(processLive);
     }
-    widget.requestUpdateStreamSink.add(null);
   }
 
   @override
@@ -232,7 +226,9 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
                   colour: ColourPalette.of(context).active,
                   filledChildColour:
                       ColourPalette.of(context).secondaryBackground,
-                  onTap: () => widget.updateStreamSink.add(Programme.new_()),
+                  onTap: () => widget.update.publish(Update(
+                    programme: Programme.new_(),
+                  )),
                 ),
                 PackedButton(
                   child: const Icon(CupertinoIcons.folder_open)
@@ -243,7 +239,7 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
                   onTap: () async {
                     var programme = await open();
                     if (programme != null) {
-                      widget.updateStreamSink.add(programme);
+                      widget.update.publish(Update(programme: programme));
                     }
                   },
                 ),
@@ -267,12 +263,12 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
                   colour: ColourPalette.of(context).active,
                   filledChildColour:
                       ColourPalette.of(context).secondaryBackground,
-                  onTap: () => widget.updateStreamSink.add(
-                    programme.withDecks(
+                  onTap: () => widget.update.publish(
+                    Update(programme: programme.withDecks(
                       programme.decks.rebuild((builder) {
                         builder.insert(
                           programme.decks.indexWhere(
-                                  (deck) => deck.key == previewDeck) +
+                                  (deck) => deck.key == previewDeck?.key) +
                               1,
                           Deck(
                             key: DeckKey.distinctFrom(
@@ -281,7 +277,7 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
                           ),
                         );
                       }),
-                    ),
+                    )),
                   ),
                 ),
               ].toBuiltList(),
@@ -302,12 +298,14 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
                     // removing the item at oldIndex will shorten the list by 1.
                     newIndex -= 1;
                   }
-                  widget.updateStreamSink.add(
-                    programme.mapDecks(
-                      (decks) => decks.rebuild((builder) {
-                        final deck = builder.removeAt(oldIndex);
-                        builder.insert(newIndex, deck);
-                      }),
+                  widget.update.publish(
+                    Update(
+                      programme: programme.mapDecks(
+                        (decks) => decks.rebuild((builder) {
+                          final deck = builder.removeAt(oldIndex);
+                          builder.insert(newIndex, deck);
+                        }),
+                      ),
                     ),
                   );
                 });
@@ -319,25 +317,30 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
                   rowIndex: rowIndex,
                   deckKey: deck.key,
                   label: deck.label,
-                  selected: deck.key == previewDeck,
+                  selected: deck.key == previewDeck?.key,
                   onSelect: () {
-                    widget.previewStreamSink.add(deck.key);
+                    widget.preview.publish(DeckKeyIndex(
+                      key: deck.key,
+                      index: Index.zero,
+                    ));
                   },
-                  onDelete: () => widget.updateStreamSink.add(
-                    programme.withDecks(
-                      programme.decks.rebuild(
-                        (decks) =>
-                            decks.removeWhere((deck_) => deck_.key == deck.key),
+                  onDelete: () => widget.update.publish(
+                    Update(
+                      programme: programme.withDecks(
+                        programme.decks.rebuild(
+                          (decks) => decks
+                              .removeWhere((deck_) => deck_.key == deck.key),
+                        ),
                       ),
                     ),
                   ),
                   isLive: liveDeck?.key == deck.key,
-                  goLive: () => widget.liveStreamSink.add(ShowMessage(
+                  goLive: () => widget.live.publish(ShowMessage(
                     defaultSettings: programme.defaultSettings,
                     quiet: false,
                     deckIndex: DeckIndex(deck: deck, index: Index.zero),
                   )),
-                  closeLive: () => widget.liveStreamSink.add(CloseMessage()),
+                  closeLive: () => widget.live.publish(CloseMessage()),
                 );
               },
               itemCount: programme.decks.length,

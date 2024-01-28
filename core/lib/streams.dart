@@ -1,5 +1,6 @@
-import 'dart:async';
-
+import 'package:core/pubsub.dart';
+import 'package:meta/meta.dart';
+import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'deck.dart';
@@ -7,83 +8,60 @@ import 'message.dart';
 import 'map_stream_sink.dart';
 import 'multiplex_stream.dart';
 
+@immutable
+class Update {
+  final Programme programme;
+  final UuidValue? source;
+
+  Update({required this.programme, this.source});
+
+  Update.fromJson(Map<String, dynamic> json)
+      : programme = Programme.fromJson(
+          json['programme'] as Map<String, dynamic>,
+        ),
+        source = (() {
+          switch (json['source'] as String?) {
+            case null:
+              return null;
+            case final source:
+              return UuidValue.fromString(source);
+          }
+        })();
+
+  Map<String, dynamic> toJson() => {
+        'programme': programme.toJson(),
+        'source': source?.toString(),
+      };
+}
+
 abstract class ClientStreams {
-  StreamSink<void> get requestUpdateStreamSink;
-  Stream<Programme> get updateStream;
-  StreamSink<Programme> get updateStreamSink;
-  Stream<Message> get liveStream;
-  StreamSink<Message> get liveStreamSink;
+  PubSub<Update> get update;
+  PubSub<Message> get live;
 
   void dispose();
 }
 
 class LocalClientStreams extends ClientStreams {
-  var _programme = Programme.new_();
-  Message _liveMessage = CloseMessage();
+  final PubSubController<Update> update =
+      PubSubController(initialValue: Update(programme: Programme.new_()));
+  final PubSubController<Message> live =
+      PubSubController<Message>(initialValue: CloseMessage());
 
-  final _requestUpdateStreamController = StreamController<void>();
-  final _updateStreamController = StreamController<Programme>.broadcast();
-  final _liveStreamController = StreamController<Message>.broadcast();
-
-  late final StreamSubscription<void> _requestUpdateStreamSubscription;
-  late final StreamSubscription<Programme> _updateStreamSubscription;
-  late final StreamSubscription<Message> _liveStreamSubscription;
-
-  @override
-  StreamSink<void> get requestUpdateStreamSink =>
-      _requestUpdateStreamController.sink;
-  @override
-  Stream<Programme> get updateStream => _updateStreamController.stream;
-  @override
-  StreamSink<Programme> get updateStreamSink => _updateStreamController.sink;
-  @override
-  Stream<Message> get liveStream => _liveStreamController.stream;
-  @override
-  StreamSink<Message> get liveStreamSink => _liveStreamController.sink;
-
-  LocalClientStreams() {
-    _requestUpdateStreamSubscription =
-        _requestUpdateStreamController.stream.listen(
-      (_) {
-        _updateStreamController.add(_programme);
-        _liveStreamController.add(_liveMessage);
-      },
-    );
-    _updateStreamSubscription = _updateStreamController.stream.listen(
-      (Programme newProgramme) {
-        _programme = newProgramme;
-      },
-    );
-    _liveStreamSubscription = _liveStreamController.stream.listen(
-      (Message message) {
-        _liveMessage = message;
-      },
-    );
-  }
+  LocalClientStreams();
 
   dispose() {
-    _liveStreamSubscription.cancel();
-    _updateStreamSubscription.cancel();
-    _requestUpdateStreamSubscription.cancel();
-
-    _liveStreamController.close();
-    _updateStreamController.close();
-    _requestUpdateStreamController.close();
+    update.dispose();
+    live.dispose();
   }
 }
 
 class WebsocketClientStreams extends ClientStreams {
   final WebSocketChannel websocketChannel;
+
   @override
-  final Stream<Message> liveStream;
+  final PubSubStreamsClient<Update> update;
   @override
-  final StreamSink<Message> liveStreamSink;
-  @override
-  final StreamSink<void> requestUpdateStreamSink;
-  @override
-  final Stream<Programme> updateStream;
-  @override
-  final StreamSink<Programme> updateStreamSink;
+  final PubSubStreamsClient<Message> live;
 
   WebsocketClientStreams(WebSocketChannel webSocketChannel)
       : this._multiplexStream(
@@ -96,44 +74,54 @@ class WebsocketClientStreams extends ClientStreams {
     required this.websocketChannel,
     required final MultiplexStream multiplexStream,
     required final MultiplexStreamSink multiplexStreamSink,
-  })  : requestUpdateStreamSink = multiplexStreamSink['requestUpdate'],
-        updateStream = multiplexStream['update']
-            .map((event) => event as Map<String, dynamic>)
-            .map(Programme.fromJson)
-            .asBroadcastStream(),
-        updateStreamSink = multiplexStreamSink['update']
-            .map((programme) => programme.toJson()),
-        liveStream = multiplexStream['live']
-            .map((event) => event as Map<String, dynamic>)
-            .map(Message.fromJson)
-            .asBroadcastStream(),
-        liveStreamSink =
-            multiplexStreamSink['live'].map((message) => message.toJson());
+  })  : update = PubSubStreamsClient(
+          sink: multiplexStreamSink['update'].map((update) => update.toJson()),
+          stream: multiplexStream['update']
+              .map((update) => update as Map<String, dynamic>)
+              .map(Update.fromJson)
+              .asBroadcastStream(),
+          requestUpdate:
+              multiplexStreamSink['updateRequestUpdate'].map((_) => null),
+        ),
+        live = PubSubStreamsClient(
+          sink: multiplexStreamSink['live'].map((message) => message.toJson()),
+          stream: multiplexStream['live']
+              .map((message) => message as Map<String, dynamic>)
+              .map(Message.fromJson)
+              .asBroadcastStream(),
+          requestUpdate:
+              multiplexStreamSink['liveRequestUpdate'].map((_) => null),
+        );
+
   @override
   void dispose() {}
 }
 
-void websocketServerStreams({
-  required WebSocketChannel webSocketChannel,
-  required ClientStreams serverStreams,
-}) {
-  final multiplexStream = MultiplexStream(webSocketChannel.stream);
-  final multiplexStreamSink = MultiplexStreamSink(webSocketChannel.sink);
+class WebsocketServerStreams {
+  late final PubSubStreamsServer<Update> update;
+  late final PubSubStreamsServer<Message> liveStream;
 
-  multiplexStream['requestUpdate']
-      .listen(serverStreams.requestUpdateStreamSink.add);
-  serverStreams.updateStream
-      .map((document) => document.toJson())
-      .listen(multiplexStreamSink['update'].add);
-  multiplexStream['update']
-      .map((event) => event as Map<String, dynamic>)
-      .map(Programme.fromJson)
-      .listen(serverStreams.updateStreamSink.add);
-  serverStreams.liveStream
-      .map((message) => message.toJson())
-      .listen(multiplexStreamSink['live'].add);
-  multiplexStream['live']
-      .map((event) => event as Map<String, dynamic>)
-      .map(Message.fromJson)
-      .listen(serverStreams.liveStreamSink.add);
+  WebsocketServerStreams({
+    required WebSocketChannel webSocketChannel,
+    required ClientStreams serverStreams,
+  }) {
+    final multiplexStream = MultiplexStream(webSocketChannel.stream);
+    final multiplexStreamSink = MultiplexStreamSink(webSocketChannel.sink);
+
+    update = serverStreams.update.streamsServer(
+      sink: multiplexStreamSink['update'].map((update) => update.toJson()),
+      stream: multiplexStream['update']
+          .map((event) => event as Map<String, dynamic>)
+          .map(Update.fromJson),
+      requestUpdate: multiplexStream['updateRequestUpdate'],
+    );
+
+    liveStream = serverStreams.live.streamsServer(
+      sink: multiplexStreamSink['live'].map((message) => message.toJson()),
+      stream: multiplexStream['live']
+          .map((event) => event as Map<String, dynamic>)
+          .map(Message.fromJson),
+      requestUpdate: multiplexStream['liveRequestUpdate'],
+    );
+  }
 }

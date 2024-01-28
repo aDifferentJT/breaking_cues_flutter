@@ -1,6 +1,5 @@
-import 'dart:async';
-
 import 'package:built_collection/built_collection.dart';
+import 'package:core/pubsub.dart';
 import 'package:flutter/material.dart';
 
 import 'package:core/deck.dart';
@@ -12,19 +11,15 @@ import 'colours.dart';
 import 'left_tabs.dart';
 
 class DockedPreview extends StatefulWidget {
-  final StreamSink<void> requestUpdateStreamSink;
-  final Stream<Message> stream;
+  final PubSub<Message> pubSub;
   final BuiltMap<String, DisplaySettings> defaultSettings;
   final Deck? deck;
-  final void Function(Deck)? updateDeck;
 
   const DockedPreview({
     super.key,
-    required this.requestUpdateStreamSink,
-    required this.stream,
+    required this.pubSub,
     required this.defaultSettings,
     this.deck,
-    this.updateDeck,
   });
 
   @override
@@ -90,8 +85,7 @@ class _DockedPreviewState extends State<DockedPreview> {
                         bottom: 0,
                       ),
                       ScaledOutput(
-                        requestUpdateStreamSink: widget.requestUpdateStreamSink,
-                        stream: widget.stream,
+                        pubSub: widget.pubSub,
                         name: name,
                       ).aspectRatio(16 / 9),
                     ]).centered(),

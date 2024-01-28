@@ -20,6 +20,7 @@ dependencies:
   shelf: ^1.1.0
   shelf_router: ^1.0.0
   shelf_web_socket: ^1.0.3
+  uuid: ^4.3.3
   web_socket_channel: ^2.4.0
 
 dev_dependencies:
