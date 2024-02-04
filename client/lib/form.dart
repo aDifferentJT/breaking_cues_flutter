@@ -326,11 +326,13 @@ class BCOptionalColourFormField<T> extends BCOptionalTextFormField<T> {
 
 @immutable
 class BCRadioOption<U> {
+  final String debugLabel;
   final U value;
   final Widget child;
   final Color colour;
 
   const BCRadioOption({
+    required this.debugLabel,
     required this.value,
     required this.child,
     required this.colour,
@@ -390,6 +392,7 @@ class BCRadioFormField<T, U> extends BCFormField<T> {
         buttons: options
             .map(
               (option) => PackedButton(
+                debugLabel: option.debugLabel,
                 child: option.child,
                 colour: option.colour,
                 filled: option.value == getter(value),

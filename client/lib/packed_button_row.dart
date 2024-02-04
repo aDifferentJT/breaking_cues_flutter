@@ -1,6 +1,8 @@
 import 'package:built_collection/built_collection.dart';
+import 'package:client/colours.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
 void _doNothing() {}
@@ -37,28 +39,40 @@ class _PackedButtonWidgetState extends State<_PackedButtonWidget> {
           ? const Radius.circular(5)
           : Radius.zero,
     );
-    return widget.button.child
-        .defaultTextStyle(
-          style: TextStyle(
-            color:
-                filled ? widget.button.filledChildColour : widget.button.colour,
-          ),
-        )
-        .iconTheme(
-          data: IconThemeData(
-            color:
-                filled ? widget.button.filledChildColour : widget.button.colour,
-          ),
-        )
-        .container(
-          decoration: BoxDecoration(
-            color: filled ? widget.button.colour : null,
-            border: Border.all(
-              color: widget.button.colour,
+    return Builder(
+      builder: (context) => widget.button.child
+          .defaultTextStyle(
+            style: TextStyle(
+              color: filled
+                  ? widget.button.filledChildColour
+                  : widget.button.colour,
             ),
-            borderRadius: borderRadius,
+          )
+          .iconTheme(
+            data: IconThemeData(
+              color: filled
+                  ? widget.button.filledChildColour
+                  : widget.button.colour,
+            ),
+          )
+          .container(
+            decoration: BoxDecoration(
+              color: filled ? widget.button.colour : null,
+              border: Border.all(
+                color: widget.button.colour,
+              ),
+              borderRadius: borderRadius,
+              boxShadow: Focus.of(context).hasPrimaryFocus
+                  ? [
+                      ColourPalette.of(context).focusedShadow(
+                        colour: widget.button.colour,
+                      ),
+                    ]
+                  : null,
+            ),
           ),
-        )
+    )
+        .focus()
         .gestureDetector(
           onTap: widget.button.onTap,
           onTapDown: (_) => setState(() => depressed = true),
@@ -66,12 +80,16 @@ class _PackedButtonWidgetState extends State<_PackedButtonWidget> {
           onTapCancel: () => setState(() => depressed = false),
         )
         .wrap(widget.button.wrapper)
-        .padding(widget.padding);
+        .padding(widget.padding)
+        .callbackShortcuts(bindings: {
+      const SingleActivator(LogicalKeyboardKey.space): widget.button.onTap,
+    });
   }
 }
 
 @immutable
 class PackedButton {
+  final String debugLabel;
   final Widget child;
   final Color colour;
   final bool filled;
@@ -80,6 +98,7 @@ class PackedButton {
   final Widget Function(Widget) wrapper;
 
   const PackedButton({
+    required this.debugLabel,
     required this.child,
     required this.colour,
     this.filled = false,
@@ -102,17 +121,19 @@ class PackedButtonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: buttons
-          .mapIndexed(
-            (index, button) => _PackedButtonWidget(
-              button,
-              index: index,
-              buttonCount: buttons.length,
-              padding: padding,
-            ),
-          )
-          .toList(),
+    return FocusTraversalGroup(
+      child: Row(
+        children: buttons
+            .mapIndexed(
+              (index, button) => _PackedButtonWidget(
+                button,
+                index: index,
+                buttonCount: buttons.length,
+                padding: padding,
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 }

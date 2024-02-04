@@ -570,4 +570,39 @@ extension WidgetModifiers on Widget {
         baselineType: baselineType,
         child: this,
       );
+
+  Widget focus({
+    Key? key,
+    FocusNode? focusNode,
+    FocusNode? parentNode,
+    bool autofocus = false,
+    void Function(bool)? onFocusChange,
+    KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent,
+    KeyEventResult Function(FocusNode, RawKeyEvent)? onKey,
+    bool? canRequestFocus,
+    bool? skipTraversal,
+    bool? descendantsAreFocusable,
+    bool? descendantsAreTraversable,
+    bool includeSemantics = true,
+    String? debugLabel,
+  }) =>
+      Focus(
+        key: key,
+        focusNode: focusNode,
+        parentNode: parentNode,
+        autofocus: autofocus,
+        onFocusChange: onFocusChange,
+        onKeyEvent: onKeyEvent,
+        onKey: onKey,
+        canRequestFocus: canRequestFocus,
+        skipTraversal: skipTraversal,
+        descendantsAreFocusable: descendantsAreFocusable,
+        descendantsAreTraversable: descendantsAreTraversable,
+        includeSemantics: includeSemantics,
+        debugLabel: debugLabel,
+        child: this,
+      );
+
+  Widget excludeFocus({Key? key, bool excluding = true}) =>
+      ExcludeFocus(key: key, excluding: excluding, child: this);
 }

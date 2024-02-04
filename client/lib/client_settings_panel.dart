@@ -54,12 +54,14 @@ class ClientSettingsPanel extends StatelessWidget {
             PackedButtonRow(
               buttons: [
                 PackedButton(
+                  debugLabel: 'Connect',
                   child: const Text('Connect').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).foreground,
                   filledChildColour: ColourPalette.of(context).background,
                   onTap: connect,
                 ),
                 PackedButton(
+                  debugLabel: 'Disconnect',
                   child:
                       const Text('Disconnect').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).foreground,
@@ -89,11 +91,13 @@ class ClientSettingsPanel extends StatelessWidget {
                 setter: (_) => (newColourPalette) => newColourPalette,
                 options: [
                   BCRadioOption(
+                    debugLabel: 'Dark',
                     value: const ColourPalette.dark(),
                     child: const Text('Dark').padding(const EdgeInsets.all(4)),
                     colour: ColourPalette.of(context).foreground,
                   ),
                   BCRadioOption(
+                    debugLabel: 'Light',
                     value: const ColourPalette.light(),
                     child: const Text('Light').padding(const EdgeInsets.all(4)),
                     colour: ColourPalette.of(context).foreground,

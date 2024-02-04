@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 
 import 'package:core/deck.dart';
 import 'package:core/message.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
 import 'colours.dart';
@@ -39,6 +40,7 @@ class ProgrammeRowButtons extends StatelessWidget {
     return PackedButtonRow(
       buttons: [
         PackedButton(
+          debugLabel: "Delete Deck",
           child: const Icon(CupertinoIcons.delete_solid)
               .padding(const EdgeInsets.all(1)),
           colour: ColourPalette.of(context).danger,
@@ -46,6 +48,7 @@ class ProgrammeRowButtons extends StatelessWidget {
           onTap: delete,
         ),
         PackedButton(
+          debugLabel: "Deck Reorder Handle",
           child: const Icon(CupertinoIcons.arrow_up_arrow_down)
               .padding(const EdgeInsets.all(1)),
           colour: selected
@@ -58,6 +61,7 @@ class ProgrammeRowButtons extends StatelessWidget {
           ),
         ),
         PackedButton(
+          debugLabel: "Programme Row Go Live",
           child:
               const Icon(CupertinoIcons.film).padding(const EdgeInsets.all(1)),
           colour: ColourPalette.of(context).danger,
@@ -103,25 +107,32 @@ class ProgrammeRow extends StatelessWidget {
         height: 0,
         thickness: 1,
       ),
-      Row(children: [
-        Expanded(child: Text(label)),
-        ProgrammeRowButtons(
-          rowIndex: rowIndex,
-          deckKey: deckKey,
-          selected: selected,
-          delete: onDelete,
-          isLive: isLive,
-          goLive: goLive,
-          closeLive: closeLive,
-        )
-      ])
-          .container(
-            padding: const EdgeInsets.all(10),
+      Builder(
+        builder: (context) => Row(children: [
+          Expanded(child: Text(label)),
+          ProgrammeRowButtons(
+            rowIndex: rowIndex,
+            deckKey: deckKey,
+            selected: selected,
+            delete: onDelete,
+            isLive: isLive,
+            goLive: goLive,
+            closeLive: closeLive,
+          )
+        ]).container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
             color: selected
                 ? ColourPalette.of(context).active
                 : ColourPalette.of(context).background,
-          )
-          .gestureDetector(onTap: onSelect),
+            boxShadow: Focus.of(context).hasPrimaryFocus
+                ? [ColourPalette.of(context).focusedShadow()]
+                : null,
+          ),
+        ),
+      ).focus().gestureDetector(onTap: onSelect).callbackShortcuts(bindings: {
+        const SingleActivator(LogicalKeyboardKey.space): onSelect,
+      }),
       Divider(
         color: ColourPalette.of(context).secondaryBackground,
         height: 0,
@@ -210,144 +221,152 @@ class _ProgrammePanelState extends State<ProgrammePanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Text(
-              "Programme",
-              style: ColourPalette.of(context).headingStyle,
-            ).expanded(),
-            PackedButtonRow(
-              buttons: [
-                PackedButton(
-                  child: const Icon(CupertinoIcons.doc)
-                      .padding(const EdgeInsets.all(4)),
-                  colour: ColourPalette.of(context).active,
-                  filledChildColour:
-                      ColourPalette.of(context).secondaryBackground,
-                  onTap: () => widget.update.publish(Update(
-                    programme: Programme.new_(),
-                  )),
+    return FocusTraversalGroup(
+      child: Column(
+        children: [
+          FocusTraversalGroup(
+            child: Row(
+              children: [
+                Text(
+                  "Programme",
+                  style: ColourPalette.of(context).headingStyle,
+                ).expanded(),
+                PackedButtonRow(
+                  buttons: [
+                    PackedButton(
+                      debugLabel: "New Programme",
+                      child: const Icon(CupertinoIcons.doc)
+                          .padding(const EdgeInsets.all(4)),
+                      colour: ColourPalette.of(context).active,
+                      filledChildColour:
+                          ColourPalette.of(context).secondaryBackground,
+                      onTap: () => widget.update.publish(Update(
+                        programme: Programme.new_(),
+                      )),
+                    ),
+                    PackedButton(
+                      debugLabel: "Open Programme",
+                      child: const Icon(CupertinoIcons.folder_open)
+                          .padding(const EdgeInsets.all(4)),
+                      colour: ColourPalette.of(context).active,
+                      filledChildColour:
+                          ColourPalette.of(context).secondaryBackground,
+                      onTap: () async {
+                        var programme = await open();
+                        if (programme != null) {
+                          widget.update.publish(Update(programme: programme));
+                        }
+                      },
+                    ),
+                    PackedButton(
+                      debugLabel: "Save Programme",
+                      child: const Icon(CupertinoIcons.floppy_disk)
+                          .padding(const EdgeInsets.all(4)),
+                      colour: ColourPalette.of(context).active,
+                      filledChildColour:
+                          ColourPalette.of(context).secondaryBackground,
+                      onTap: () => save(programme),
+                    ),
+                  ].toBuiltList(),
+                  padding: const EdgeInsets.all(1),
                 ),
-                PackedButton(
-                  child: const Icon(CupertinoIcons.folder_open)
-                      .padding(const EdgeInsets.all(4)),
-                  colour: ColourPalette.of(context).active,
-                  filledChildColour:
-                      ColourPalette.of(context).secondaryBackground,
-                  onTap: () async {
-                    var programme = await open();
-                    if (programme != null) {
-                      widget.update.publish(Update(programme: programme));
-                    }
-                  },
-                ),
-                PackedButton(
-                  child: const Icon(CupertinoIcons.floppy_disk)
-                      .padding(const EdgeInsets.all(4)),
-                  colour: ColourPalette.of(context).active,
-                  filledChildColour:
-                      ColourPalette.of(context).secondaryBackground,
-                  onTap: () => save(programme),
-                ),
-              ].toBuiltList(),
-              padding: const EdgeInsets.all(1),
-            ),
-            const SizedBox(width: 4),
-            PackedButtonRow(
-              buttons: [
-                PackedButton(
-                  child: const Icon(CupertinoIcons.add)
-                      .padding(const EdgeInsets.all(4)),
-                  colour: ColourPalette.of(context).active,
-                  filledChildColour:
-                      ColourPalette.of(context).secondaryBackground,
-                  onTap: () => widget.update.publish(
-                    Update(programme: programme.withDecks(
-                      programme.decks.rebuild((builder) {
-                        builder.insert(
-                          programme.decks.indexWhere(
-                                  (deck) => deck.key == previewDeck?.key) +
-                              1,
-                          Deck(
-                            key: DeckKey.distinctFrom(
-                              programme.decks.map((deck) => deck.key),
-                            ),
-                          ),
-                        );
-                      }),
-                    )),
-                  ),
-                ),
-              ].toBuiltList(),
-              padding: const EdgeInsets.all(1),
-            ),
-          ],
-        ).container(
-          padding: const EdgeInsets.all(20),
-          color: ColourPalette.of(context).secondaryBackground,
-        ),
-        Expanded(
-          child: Container(
-            color: ColourPalette.of(context).background,
-            child: ReorderableList(
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (oldIndex < newIndex) {
-                    // removing the item at oldIndex will shorten the list by 1.
-                    newIndex -= 1;
-                  }
-                  widget.update.publish(
-                    Update(
-                      programme: programme.mapDecks(
-                        (decks) => decks.rebuild((builder) {
-                          final deck = builder.removeAt(oldIndex);
-                          builder.insert(newIndex, deck);
-                        }),
+                const SizedBox(width: 4),
+                PackedButtonRow(
+                  buttons: [
+                    PackedButton(
+                      debugLabel: "New Deck",
+                      child: const Icon(CupertinoIcons.add)
+                          .padding(const EdgeInsets.all(4)),
+                      colour: ColourPalette.of(context).active,
+                      filledChildColour:
+                          ColourPalette.of(context).secondaryBackground,
+                      onTap: () => widget.update.publish(
+                        Update(programme: programme.withDecks(
+                          programme.decks.rebuild((builder) {
+                            builder.insert(
+                              programme.decks.indexWhere(
+                                      (deck) => deck.key == previewDeck?.key) +
+                                  1,
+                              Deck(
+                                key: DeckKey.distinctFrom(
+                                  programme.decks.map((deck) => deck.key),
+                                ),
+                              ),
+                            );
+                          }),
+                        )),
                       ),
                     ),
-                  );
-                });
-              },
-              itemBuilder: (context, rowIndex) {
-                final deck = programme.decks[rowIndex];
-                return ProgrammeRow(
-                  key: Key("${deck.key}"),
-                  rowIndex: rowIndex,
-                  deckKey: deck.key,
-                  label: deck.label,
-                  selected: deck.key == previewDeck?.key,
-                  onSelect: () {
-                    widget.preview.publish(DeckKeyIndex(
-                      key: deck.key,
-                      index: Index.zero,
-                    ));
-                  },
-                  onDelete: () => widget.update.publish(
-                    Update(
-                      programme: programme.withDecks(
-                        programme.decks.rebuild(
-                          (decks) => decks
-                              .removeWhere((deck_) => deck_.key == deck.key),
+                  ].toBuiltList(),
+                  padding: const EdgeInsets.all(1),
+                ),
+              ],
+            ).container(
+              padding: const EdgeInsets.all(20),
+              color: ColourPalette.of(context).secondaryBackground,
+            ),
+          ),
+          Expanded(
+            child: Container(
+              color: ColourPalette.of(context).background,
+              child: ReorderableList(
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (oldIndex < newIndex) {
+                      // removing the item at oldIndex will shorten the list by 1.
+                      newIndex -= 1;
+                    }
+                    widget.update.publish(
+                      Update(
+                        programme: programme.mapDecks(
+                          (decks) => decks.rebuild((builder) {
+                            final deck = builder.removeAt(oldIndex);
+                            builder.insert(newIndex, deck);
+                          }),
+                        ),
+                      ),
+                    );
+                  });
+                },
+                itemBuilder: (context, rowIndex) {
+                  final deck = programme.decks[rowIndex];
+                  return ProgrammeRow(
+                    key: Key("${deck.key}"),
+                    rowIndex: rowIndex,
+                    deckKey: deck.key,
+                    label: deck.label,
+                    selected: deck.key == previewDeck?.key,
+                    onSelect: () {
+                      widget.preview.publish(DeckKeyIndex(
+                        key: deck.key,
+                        index: Index.zero,
+                      ));
+                    },
+                    onDelete: () => widget.update.publish(
+                      Update(
+                        programme: programme.withDecks(
+                          programme.decks.rebuild(
+                            (decks) => decks
+                                .removeWhere((deck_) => deck_.key == deck.key),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  isLive: liveDeck?.key == deck.key,
-                  goLive: () => widget.live.publish(ShowMessage(
-                    defaultSettings: programme.defaultSettings,
-                    quiet: false,
-                    deckIndex: DeckIndex(deck: deck, index: Index.zero),
-                  )),
-                  closeLive: () => widget.live.publish(CloseMessage()),
-                );
-              },
-              itemCount: programme.decks.length,
+                    isLive: liveDeck?.key == deck.key,
+                    goLive: () => widget.live.publish(ShowMessage(
+                      defaultSettings: programme.defaultSettings,
+                      quiet: false,
+                      deckIndex: DeckIndex(deck: deck, index: Index.zero),
+                    )),
+                    closeLive: () => widget.live.publish(CloseMessage()),
+                  );
+                },
+                itemCount: programme.decks.length,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -144,6 +144,7 @@ class _ClientAppState extends State<ClientApp>
                   keepHiddenChildrenAlive: true,
                   children: [
                     TabEntry(
+                      debugLabel: 'Programme',
                       icon: const Text('Programme').rotated(quarterTurns: 1),
                       body: ProgrammePanel(
                         update: pubSubs.update,
@@ -152,12 +153,14 @@ class _ClientAppState extends State<ClientApp>
                       ),
                     ),
                     TabEntry(
+                      debugLabel: 'Outputs',
                       icon: const Text('Outputs').rotated(quarterTurns: 1),
                       body: OutputSettingsPanel(
                         updateStream: pubSubs.update,
                       ),
                     ),
                     TabEntry(
+                      debugLabel: "Client Settings",
                       icon: const Text('Settings').rotated(quarterTurns: 1),
                       body: ClientSettingsPanel(
                         serverAddress: serverAddress,

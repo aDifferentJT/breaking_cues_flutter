@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:collection/collection.dart';
 import 'package:core/pubsub.dart';
 
 import 'package:flutter/material.dart';
@@ -14,79 +15,29 @@ import 'package:flutter_utils/widget_modifiers.dart';
 import 'package:uuid/uuid.dart';
 
 import 'colours.dart';
-import 'form.dart';
+import 'form2.dart';
 import 'packed_button_row.dart';
 
 @immutable
-class _CommentField extends StatefulWidget {
-  final PubSub<(DeckIndex?, UuidValue?)> deckIndex;
+class _CommentField extends StatelessWidget {
+  final _DeckIndexEditingController controller;
 
   const _CommentField({
-    required this.deckIndex,
+    required this.controller,
   });
 
   @override
-  State<StatefulWidget> createState() => _CommentFieldState();
-}
-
-class _CommentFieldState extends State<_CommentField> {
-  DeckIndex? deckIndex;
-  final uuid = const Uuid().v4obj();
-
-  late StreamSubscription<(DeckIndex?, UuidValue?)> deckIndexSubscription;
-
-  void processDeckIndex((DeckIndex?, UuidValue?) update) {
-    final (newDeckIndex, source) = update;
-    if (source != uuid) {
-      setState(() => deckIndex = newDeckIndex);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-  }
-
-  @override
-  void didUpdateWidget(covariant _CommentField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.deckIndex != oldWidget.deckIndex) {
-      deckIndexSubscription.cancel();
-      deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-    }
-  }
-
-  @override
-  void dispose() {
-    deckIndexSubscription.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final deckIndex = this.deckIndex;
-    if (deckIndex == null) {
-      return Container();
-    } else {
-      return TextFormField(
-        initialValue: deckIndex.deck.comment,
-        decoration: InputDecoration.collapsed(
-          hintText: deckIndex.deck.label,
-          hintStyle: ColourPalette.of(context)
-              .headingStyle
-              .copyWith(color: ColourPalette.of(context).secondaryForeground),
-        ),
-        style: ColourPalette.of(context).headingStyle,
-        autofocus: false,
-        onChanged: (comment) => widget.deckIndex.publish((
-          deckIndex.withDeck(
-            deckIndex.deck.withComment(comment),
-          ),
-          uuid
-        )),
-      );
-    }
+    return TextFormField(
+      controller: controller.commentController,
+      decoration: InputDecoration.collapsed(
+        hintText: controller.deckIndex.deck.label,
+        hintStyle: ColourPalette.of(context)
+            .headingStyle
+            .copyWith(color: ColourPalette.of(context).secondaryForeground),
+      ),
+      style: ColourPalette.of(context).headingStyle,
+    );
   }
 }
 
@@ -102,6 +53,7 @@ class _ChunkTypeRadio extends StatelessWidget {
     return PackedButtonRow(
       buttons: [
         PackedButton(
+          debugLabel: 'Countdown',
           child:
               const Icon(CupertinoIcons.clock).padding(const EdgeInsets.all(1)),
           colour: ColourPalette.of(context).active,
@@ -110,6 +62,7 @@ class _ChunkTypeRadio extends StatelessWidget {
           onTap: () => onChangeChunk(CountdownChunk.default_),
         ),
         PackedButton(
+          debugLabel: 'Title',
           child: const Icon(CupertinoIcons.textformat)
               .padding(const EdgeInsets.all(1)),
           colour: ColourPalette.of(context).active,
@@ -119,6 +72,7 @@ class _ChunkTypeRadio extends StatelessWidget {
               const TitleChunk(title: 'Title', subtitle: 'Subtitle')),
         ),
         PackedButton(
+          debugLabel: 'Body',
           child: const Icon(CupertinoIcons.text_aligncenter)
               .padding(const EdgeInsets.all(1)),
           colour: ColourPalette.of(context).active,
@@ -133,772 +87,717 @@ class _ChunkTypeRadio extends StatelessWidget {
 }
 
 @immutable
-abstract class _EditingSpecificChunkBody extends StatefulWidget {
-  final PubSub<(DeckIndex?, UuidValue?)> deckIndex;
-  final int chunkIndex;
+class _EditingCountdownChunkBody extends StatelessWidget {
+  final _CountdownChunkEditingController controller;
 
-  const _EditingSpecificChunkBody({
-    required this.deckIndex,
-    required this.chunkIndex,
-  });
-}
-
-abstract class _EditingSpecificChunkBodyState<
-    T extends _EditingSpecificChunkBody> extends State<T> {
-  DeckIndex? deckIndex;
-  final uuid = const Uuid().v4obj();
-
-  late StreamSubscription<(DeckIndex?, UuidValue?)> deckIndexSubscription;
-
-  void processDeckIndex((DeckIndex?, UuidValue?) update) {
-    final (newDeckIndex, source) = update;
-    if (source == uuid) {
-      deckIndex = newDeckIndex;
-    } else {
-      setState(() => deckIndex = newDeckIndex);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-  }
-
-  @override
-  void didUpdateWidget(covariant T oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.deckIndex != oldWidget.deckIndex) {
-      deckIndexSubscription.cancel();
-      deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-    }
-  }
-
-  @override
-  void dispose() {
-    deckIndexSubscription.cancel();
-    super.dispose();
-  }
-
-  Chunk? get chunk => deckIndex?.deck.chunks[widget.chunkIndex];
-
-  void onChangeChunk(Chunk chunk) {
-    deckIndex = deckIndex!.withDeck(
-      deckIndex!.deck.rebuildChunks((chunks) {
-        chunks[widget.chunkIndex] = chunk;
-      }),
-    );
-    widget.deckIndex.publish((deckIndex, uuid));
-  }
-
-  bool selected({required int slide}) =>
-      deckIndex?.index == Index(chunk: widget.chunkIndex, slide: slide);
-
-  void select({required int slide}) {
-    if (deckIndex != null) {
-      widget.deckIndex.publish((
-        deckIndex!.withIndex(Index(
-          chunk: widget.chunkIndex,
-          slide: slide,
-        )),
-        null,
-      ));
-    }
-  }
-}
-
-@immutable
-class _EditingCountdownChunkBody extends _EditingSpecificChunkBody {
   const _EditingCountdownChunkBody({
-    required super.deckIndex,
-    required super.chunkIndex,
+    required this.controller,
   });
 
   @override
-  createState() => _EditingCountdownChunkBodyState();
-}
-
-class _EditingCountdownChunkBodyState
-    extends _EditingSpecificChunkBodyState<_EditingCountdownChunkBody> {
-  @override
   Widget build(BuildContext context) {
-    if (deckIndex == null) {
-      return Container();
-    } else {
-      return BCForm<CountdownChunk>(
-        value: chunk as CountdownChunk,
-        onChange: onChangeChunk,
-        backgroundColour: ColourPalette.of(context).background,
-        fields: [
-          BCTextFormField(
-            label: const Text('Title:'),
-            getter: (chunk) => chunk.title,
-            setter: (chunk) => chunk.withTitle,
-            maxLines: null,
-            autofocus: selected(slide: 0),
-            onTap: () => select(slide: 0),
-          ),
-          BCTextFormField(
-            label: const Text('Subtitle 1:'),
-            getter: (chunk) => chunk.subtitle1,
-            setter: (chunk) => chunk.withSubtitle1,
-            maxLines: null,
-            autofocus: false,
-            onTap: () => select(slide: 0),
-          ),
-          BCTextFormField(
-            label: const Text('Subtitle 2:'),
-            getter: (chunk) => chunk.subtitle2,
-            setter: (chunk) => chunk.withSubtitle2,
-            maxLines: null,
-            autofocus: false,
-            onTap: () => select(slide: 0),
-          ),
-          BCTextFormField(
-            label: const Text('Message:'),
-            getter: (chunk) => chunk.message,
-            setter: (chunk) => chunk.withMessage,
-            maxLines: null,
-            autofocus: false,
-            onTap: () => select(slide: 0),
-          ),
-          BCTextFormField(
-            label: const Text('When Stopped:'),
-            getter: (chunk) => chunk.whenStopped,
-            setter: (chunk) => chunk.withWhenStopped,
-            maxLines: null,
-            autofocus: false,
-            onTap: () => select(slide: 0),
-          ),
-          BCTextFormField(
-            label: const Text('Countdown to:'),
-            getter: (chunk) => chunk.countdownTo.toIso8601String(),
-            setter: (chunk) => (text) {
-              var dateTime = DateTime.tryParse(text);
-              if (dateTime == null) {
-                return null;
-              }
-              return chunk.withCountdownTo(dateTime);
-            },
-            maxLines: null,
-            autofocus: false,
-            onTap: () => select(slide: 0),
-          ),
-          BCTextFormField(
-            label: const Text('Stop at T-'),
-            getter: (chunk) => ''
-                '${(chunk.stopAt.inHours).toString().padLeft(2, '0')}:'
-                '${(chunk.stopAt.inMinutes % 60).toString().padLeft(2, '0')}:'
-                '${(chunk.stopAt.inSeconds % 60).toString().padLeft(2, '0')}',
-            setter: (chunk) => (text) {
-              final match = RegExp(r'(^\d+):(\d+):(\d+)$').firstMatch(text);
-              if (match == null) {
-                return null;
-              }
-              return chunk.withStopAt(
-                Duration(
-                  hours: int.parse(match.group(1)!),
-                  minutes: int.parse(match.group(2)!),
-                  seconds: int.parse(match.group(3)!),
-                ),
-              );
-            },
-            maxLines: null,
-            autofocus: false,
-            onTap: () => select(slide: 0),
-          ),
-        ],
-      ).background(
-        selected(slide: 0)
-            ? ColourPalette.of(context).secondaryActive
-            : ColourPalette.of(context).background,
-      );
-    }
+    return BCForm2(
+      backgroundColour: ColourPalette.of(context).background,
+      fields: [
+        BCTextFormField2(
+          label: const Text('Title:'),
+          controller: controller.titleController,
+          maxLines: null,
+        ),
+        BCTextFormField2(
+          label: const Text('Subtitle 1:'),
+          controller: controller.subtitle1Controller,
+          maxLines: null,
+        ),
+        BCTextFormField2(
+          label: const Text('Subtitle 2:'),
+          controller: controller.subtitle2Controller,
+          maxLines: null,
+        ),
+        BCTextFormField2(
+          label: const Text('Message:'),
+          controller: controller.messageController,
+          maxLines: null,
+        ),
+        BCTextFormField2(
+          label: const Text('When Stopped:'),
+          controller: controller.whenStoppedController,
+          maxLines: null,
+        ),
+        BCTextFormField2(
+          label: const Text('Countdown to:'),
+          controller: controller.countdownToController,
+          isValid: (text) => DateTime.tryParse(text) != null,
+          maxLines: null,
+        ),
+        BCTextFormField2(
+          label: const Text('Stop at T-'),
+          controller: controller.stopAtController,
+          isValid: (text) =>
+              RegExp(r'(^\d+):(\d+):(\d+)$').firstMatch(text) != null,
+          maxLines: null,
+        ),
+      ],
+    ).background(
+      controller.focusNode.hasFocus
+          ? ColourPalette.of(context).secondaryActive
+          : ColourPalette.of(context).background,
+    );
   }
 }
 
 @immutable
-class _EditingTitleChunkBody extends _EditingSpecificChunkBody {
+class _EditingTitleChunkBody extends StatelessWidget {
+  final _TitleChunkEditingController controller;
+
   const _EditingTitleChunkBody({
-    required super.deckIndex,
-    required super.chunkIndex,
+    required this.controller,
   });
 
   @override
-  createState() => _EditingTitleChunkBodyState();
-}
-
-class _EditingTitleChunkBodyState
-    extends _EditingSpecificChunkBodyState<_EditingTitleChunkBody> {
-  @override
   Widget build(BuildContext context) {
-    if (deckIndex == null) {
-      return Container();
-    } else {
-      return BCForm<TitleChunk>(
-        value: chunk as TitleChunk,
-        onChange: onChangeChunk,
-        backgroundColour: ColourPalette.of(context).background,
-        fields: [
-          BCTextFormField(
-            label: const Text('Title:'),
-            getter: (chunk) => chunk.title,
-            setter: (chunk) => chunk.withTitle,
-            maxLines: null,
-            autofocus: selected(slide: 0),
-            onTap: () => select(slide: 0),
-          ),
-          BCTextFormField(
-            label: const Text('Subtitle:'),
-            getter: (chunk) => chunk.subtitle,
-            setter: (chunk) => chunk.withSubtitle,
-            maxLines: null,
-            autofocus: false,
-            onTap: () => select(slide: 0),
-          ),
-        ],
-      ).background(
-        selected(slide: 0)
-            ? ColourPalette.of(context).secondaryActive
-            : ColourPalette.of(context).background,
-      );
-    }
+    return BCForm2(
+      backgroundColour: ColourPalette.of(context).background,
+      fields: [
+        BCTextFormField2(
+          label: const Text('Title:'),
+          controller: controller.titleController,
+          maxLines: null,
+        ),
+        BCTextFormField2(
+          label: const Text('Subtitle:'),
+          controller: controller.subtitleController,
+          maxLines: null,
+        ),
+      ],
+    ).background(
+      controller.focusNode.hasFocus
+          ? ColourPalette.of(context).secondaryActive
+          : ColourPalette.of(context).background,
+    );
   }
 }
 
 @immutable
-class _EditingBodyChunkBody extends StatefulWidget {
-  final PubSub<(DeckIndex?, UuidValue?)> deckIndex;
-  final int chunkIndex;
+class _EditingBodyChunkBody extends StatelessWidget {
+  final _DeckIndexEditingController deckIndexController;
+  final _BodyChunkEditingController controller;
 
   const _EditingBodyChunkBody({
-    required this.deckIndex,
-    required this.chunkIndex,
+    required this.deckIndexController,
+    required this.controller,
   });
 
   @override
-  State<StatefulWidget> createState() => _EditingBodyChunkBodyState();
+  Widget build(BuildContext context) {
+    final operations = _EditingMinorChunkOperations(
+      deckIndexController: deckIndexController,
+    );
+    return Column(
+      children: List.generate(
+        controller.minorChunkControllers.length,
+        (minorChunkIndex) {
+          final (controller: controller, focusNode: focusNode) =
+              this.controller.minorChunkControllers[minorChunkIndex];
+          return CupertinoTextFormFieldRow(
+            padding: const EdgeInsets.all(2),
+            controller: controller,
+            focusNode: focusNode,
+            style: ColourPalette.of(context).bodyStyle,
+            maxLines: null,
+            cursorColor: ColourPalette.of(context).foreground,
+          )
+              .callbackShortcuts(bindings: {
+                const SingleActivator(
+                  LogicalKeyboardKey.backspace,
+                  alt: true,
+                  shift: true,
+                ): operations.delete,
+                const SingleActivator(
+                  LogicalKeyboardKey.delete,
+                  alt: true,
+                  shift: true,
+                ): operations.delete,
+                const SingleActivator(
+                  LogicalKeyboardKey.enter,
+                  alt: true,
+                ): operations.splitMinorChunk,
+                const SingleActivator(
+                  LogicalKeyboardKey.enter,
+                  alt: true,
+                  shift: true,
+                ): operations.splitMajorChunk,
+                const SingleActivator(
+                  LogicalKeyboardKey.backspace,
+                  alt: true,
+                ): operations.mergeWithPrevious,
+                const SingleActivator(
+                  LogicalKeyboardKey.delete,
+                  alt: true,
+                ): operations.mergeWithNext,
+              })
+              .background(focusNode.hasFocus
+                  ? ColourPalette.of(context).secondaryActive
+                  : ColourPalette.of(context).background)
+              .padding(const EdgeInsets.symmetric(vertical: 0.5));
+        },
+      ).toList(),
+    );
+  }
 }
 
-class _EditingBodyChunkBodyState extends State<_EditingBodyChunkBody> {
-  int minorChunksCount = 0;
+class _DeckIndexEditingController with ChangeNotifier {
+  late DeckKey key;
+  late BuiltMap<String, OptionalDisplaySettings> displaySettings;
+  final commentController = TextEditingController();
+  List<_ChunkEditingController> chunkControllers = [];
 
-  late StreamSubscription<(DeckIndex?, UuidValue?)> deckIndexSubscription;
-
-  void processDeckIndex((DeckIndex?, UuidValue?) update) {
-    final newMinorChunksCount =
-        (update.$1?.deck.chunks[widget.chunkIndex] as BodyChunk)
-            .minorChunks
-            .length;
-    if (minorChunksCount != newMinorChunksCount) {
-      setState(() => minorChunksCount = newMinorChunksCount);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-  }
-
-  @override
-  void didUpdateWidget(covariant _EditingBodyChunkBody oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.deckIndex != oldWidget.deckIndex) {
-      deckIndexSubscription.cancel();
-      deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-    }
+  _DeckIndexEditingController(DeckIndex deckIndex) {
+    this.deckIndex = deckIndex;
+    commentController.addListener(notifyListeners);
   }
 
   @override
   void dispose() {
-    deckIndexSubscription.cancel();
+    commentController.dispose();
+    for (final chunkController in chunkControllers) {
+      chunkController.dispose();
+    }
     super.dispose();
   }
 
+  Deck get deck => Deck(
+        key: key,
+        displaySettings: displaySettings,
+        comment: commentController.text,
+        chunks: chunkControllers
+            .map((chunkController) => chunkController.chunk)
+            .toBuiltList(),
+      );
+
+  Index get index =>
+      chunkControllers
+          .mapIndexed((chunk, chunkController) => chunkController.focusNodes
+              .mapIndexed((slide, focusNode) =>
+                  focusNode.hasFocus ? Index(chunk: chunk, slide: slide) : null)
+              .firstWhereOrNull((index) => index != null))
+          .firstWhereOrNull((index) => index != null) ??
+      const Index(chunk: 0, slide: 0);
+
+  DeckIndex get deckIndex => DeckIndex(deck: deck, index: index);
+
+  set deckIndex(DeckIndex deckIndex) {
+    key = deckIndex.deck.key;
+    displaySettings = deckIndex.deck.displaySettings;
+    commentController.text = deckIndex.deck.comment;
+    for (final chunkController in chunkControllers) {
+      chunkController.dispose();
+    }
+    chunkControllers =
+        deckIndex.deck.chunks.map(_ChunkEditingController.new).toList();
+    for (final chunkController in chunkControllers) {
+      chunkController.addListener(notifyListeners);
+    }
+  }
+}
+
+class _ChunkEditingController with ChangeNotifier {
+  _ChunkEditingControllerBase controller;
+
+  _ChunkEditingController(Chunk chunk)
+      : controller = _ChunkEditingControllerBase(chunk) {
+    controller.addListener(notifyListeners);
+  }
+
+  Chunk get chunk => controller.chunk;
+
+  set chunk(Chunk newChunk) {
+    print('setting chunk $chunk to $newChunk');
+    if (chunk.runtimeType == newChunk.runtimeType) {
+      controller.unsafeSetChunk(newChunk);
+    } else {
+      controller = _ChunkEditingControllerBase(newChunk);
+      controller.addListener(notifyListeners);
+      notifyListeners();
+    }
+  }
+
+  Iterable<FocusNode> get focusNodes => controller.focusNodes;
+
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(minorChunksCount, (minorChunkIndex) {
-        return _EditingMinorChunk(
-          deckIndex: widget.deckIndex,
-          chunkIndex: widget.chunkIndex,
-          minorChunkIndex: minorChunkIndex,
-        ).padding(const EdgeInsets.symmetric(vertical: 0.5));
-      }).toList(),
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+}
+
+abstract class _ChunkEditingControllerBase with ChangeNotifier {
+  Chunk get chunk;
+
+  void unsafeSetChunk(chunk);
+
+  Iterable<FocusNode> get focusNodes;
+
+  @override
+  void dispose();
+
+  factory _ChunkEditingControllerBase(Chunk chunk) {
+    if (chunk is CountdownChunk) {
+      return _CountdownChunkEditingController(chunk);
+    } else if (chunk is TitleChunk) {
+      return _TitleChunkEditingController(chunk);
+    } else if (chunk is BodyChunk) {
+      return _BodyChunkEditingController(chunk);
+    } else {
+      throw ArgumentError.value(chunk, "chunk", "Invalid Type");
+    }
+  }
+}
+
+class _CountdownChunkEditingController
+    with ChangeNotifier
+    implements _ChunkEditingControllerBase {
+  final titleController = TextEditingController();
+  final subtitle1Controller = TextEditingController();
+  final subtitle2Controller = TextEditingController();
+  final messageController = TextEditingController();
+  final whenStoppedController = TextEditingController();
+  final countdownToController = TextEditingController();
+  final stopAtController = TextEditingController();
+  final focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    subtitle1Controller.dispose();
+    subtitle2Controller.dispose();
+    messageController.dispose();
+    whenStoppedController.dispose();
+    countdownToController.dispose();
+    stopAtController.dispose();
+    focusNode.dispose();
+    super.dispose();
+  }
+
+  _CountdownChunkEditingController(CountdownChunk chunk) {
+    this.chunk = chunk;
+    titleController.addListener(notifyListeners);
+    subtitle1Controller.addListener(notifyListeners);
+    subtitle2Controller.addListener(notifyListeners);
+    messageController.addListener(notifyListeners);
+    whenStoppedController.addListener(notifyListeners);
+    countdownToController.addListener(notifyListeners);
+    stopAtController.addListener(notifyListeners);
+    focusNode.addListener(notifyListeners);
+  }
+
+  @override
+  CountdownChunk get chunk {
+    final countdownTo =
+        DateTime.tryParse(countdownToController.text) ?? DateTime.now();
+
+    final stopAtMatch =
+        RegExp(r'(^\d+):(\d+):(\d+)$').firstMatch(stopAtController.text);
+    final stopAt = stopAtMatch == null
+        ? const Duration()
+        : Duration(
+            hours: int.parse(stopAtMatch.group(1)!),
+            minutes: int.parse(stopAtMatch.group(2)!),
+            seconds: int.parse(stopAtMatch.group(3)!),
+          );
+
+    return CountdownChunk(
+      title: titleController.text,
+      subtitle1: subtitle1Controller.text,
+      subtitle2: subtitle2Controller.text,
+      message: messageController.text,
+      whenStopped: whenStoppedController.text,
+      countdownTo: countdownTo,
+      stopAt: stopAt,
     );
   }
+
+  set chunk(CountdownChunk chunk) {
+    titleController.text = chunk.title;
+    subtitle1Controller.text = chunk.subtitle1;
+    subtitle2Controller.text = chunk.subtitle2;
+    messageController.text = chunk.message;
+    whenStoppedController.text = chunk.whenStopped;
+    countdownToController.text = chunk.countdownTo.toIso8601String();
+    stopAtController.text = ''
+        '${(chunk.stopAt.inHours).toString().padLeft(2, '0')}:'
+        '${(chunk.stopAt.inMinutes % 60).toString().padLeft(2, '0')}:'
+        '${(chunk.stopAt.inSeconds % 60).toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void unsafeSetChunk(chunk) {
+    this.chunk = chunk;
+  }
+
+  @override
+  Iterable<FocusNode> get focusNodes => [focusNode];
+}
+
+class _TitleChunkEditingController
+    with ChangeNotifier
+    implements _ChunkEditingControllerBase {
+  final titleController = TextEditingController();
+  final subtitleController = TextEditingController();
+  final focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    subtitleController.dispose();
+    focusNode.dispose();
+    super.dispose();
+  }
+
+  _TitleChunkEditingController(TitleChunk chunk) {
+    this.chunk = chunk;
+    titleController.addListener(notifyListeners);
+    subtitleController.addListener(notifyListeners);
+    focusNode.addListener(notifyListeners);
+  }
+
+  @override
+  TitleChunk get chunk => TitleChunk(
+        title: titleController.text,
+        subtitle: subtitleController.text,
+      );
+
+  set chunk(TitleChunk chunk) {
+    titleController.text = chunk.title;
+    subtitleController.text = chunk.subtitle;
+  }
+
+  @override
+  void unsafeSetChunk(chunk) {
+    this.chunk = chunk;
+  }
+
+  @override
+  Iterable<FocusNode> get focusNodes => [focusNode];
+}
+
+class _BodyChunkEditingController
+    with ChangeNotifier
+    implements _ChunkEditingControllerBase {
+  late List<({TextEditingController controller, FocusNode focusNode})>
+      minorChunkControllers;
+
+  void initWith(BodyChunk chunk) {
+    minorChunkControllers = chunk.minorChunks
+        .map((minorChunk) => (
+              controller: TextEditingController(text: minorChunk)
+                ..addListener(notifyListeners),
+              focusNode: FocusNode(debugLabel: "Minor Chunk Controller")
+                ..addListener(notifyListeners),
+            ))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    for (final (controller: controller, focusNode: focusNode)
+        in minorChunkControllers) {
+      controller.dispose();
+      focusNode.dispose();
+    }
+    super.dispose();
+  }
+
+  _BodyChunkEditingController(BodyChunk chunk) {
+    initWith(chunk);
+  }
+
+  @override
+  BodyChunk get chunk => BodyChunk(
+        minorChunks: minorChunkControllers
+            .map((controller) => controller.controller.text)
+            .toBuiltList(),
+      );
+
+  set chunk(BodyChunk chunk) {
+    dispose();
+    initWith(chunk);
+  }
+
+  @override
+  void unsafeSetChunk(chunk) {
+    this.chunk = chunk;
+  }
+
+  @override
+  Iterable<FocusNode> get focusNodes =>
+      minorChunkControllers.map((controller) => controller.focusNode);
 }
 
 @immutable
 class _EditingMinorChunkOperations {
-  final void Function(DeckIndex) onChange;
+  final _DeckIndexEditingController deckIndexController;
 
   const _EditingMinorChunkOperations({
-    required this.onChange,
+    required this.deckIndexController,
   });
 
-  void moveUp(DeckIndex deckIndex) {
-    if (deckIndex.index.slide > 0) {
-      onChange(deckIndex.withIndex(Index(
-        chunk: deckIndex.index.chunk,
-        slide: deckIndex.index.slide - 1,
-      )));
-    } else if (deckIndex.index.chunk > 0) {
-      final chunk = deckIndex.index.chunk - 1;
-      onChange(deckIndex.withIndex(Index(
-        chunk: chunk,
-        slide: deckIndex.deck.chunks[chunk].slides.length - 1,
-      )));
+  void delete() {
+    for (final chunkControllerWrapper in deckIndexController.chunkControllers) {
+      final chunkController = chunkControllerWrapper.controller;
+      if (chunkController is _BodyChunkEditingController) {
+        chunkController.minorChunkControllers
+            .removeWhere((minorChunkController) {
+          if (minorChunkController.focusNode.hasFocus) {
+            minorChunkController.controller.dispose();
+            minorChunkController.focusNode.dispose();
+            return true;
+          } else {
+            return false;
+          }
+        });
+      }
     }
+    deckIndexController.chunkControllers.removeWhere((chunkControllerWrapper) {
+      final chunkController = chunkControllerWrapper.controller;
+      if (chunkController is _BodyChunkEditingController &&
+          chunkController.minorChunkControllers.isEmpty) {
+        chunkControllerWrapper.dispose();
+        return true;
+      } else {
+        return false;
+      }
+    });
+    deckIndexController.notifyListeners();
   }
 
-  void moveDown(DeckIndex deckIndex) {
-    if (deckIndex.index.slide <
-        deckIndex.deck.chunks[deckIndex.index.chunk].slides.length - 1) {
-      onChange(deckIndex.withIndex(Index(
-        chunk: deckIndex.index.chunk,
-        slide: deckIndex.index.slide + 1,
-      )));
-    } else if (deckIndex.index.chunk < deckIndex.deck.chunks.length - 1) {
-      onChange(deckIndex.withIndex(Index(
-        chunk: deckIndex.index.chunk + 1,
-        slide: 0,
-      )));
+  void splitMinorChunk() {
+    for (final chunkControllerWrapper in deckIndexController.chunkControllers) {
+      final chunkController = chunkControllerWrapper.controller;
+      if (chunkController is _BodyChunkEditingController) {
+        chunkController.minorChunkControllers = chunkController
+            .minorChunkControllers
+            .expand((minorChunkController) {
+          if (minorChunkController.focusNode.hasFocus) {
+            final text = minorChunkController.controller.text;
+            final selection = minorChunkController.controller.selection;
+
+            minorChunkController.controller.dispose();
+            minorChunkController.focusNode.dispose();
+
+            return [
+              (
+                controller: TextEditingController(
+                  text: text.substring(0, selection.baseOffset).trim(),
+                ),
+                focusNode: FocusNode(),
+              ),
+              (
+                controller: TextEditingController(
+                  text: text.substring(selection.baseOffset).trim(),
+                ),
+                focusNode: FocusNode()..requestFocus(),
+              ),
+            ];
+          } else {
+            return [minorChunkController];
+          }
+        }).toList();
+      }
     }
+    deckIndexController.notifyListeners();
   }
 
-  void delete(DeckIndex deckIndex) {
-    final chunk = deckIndex.chunk as BodyChunk;
-
-    if (deckIndex.chunk.slides.length > 1) {
-      onChange(deckIndex.withDeck(
-        deckIndex.deck.rebuildChunks((chunks) {
-          chunks[deckIndex.index.chunk] =
-              chunk.rebuildMinorChunks((minorChunks) {
-            minorChunks.removeAt(deckIndex.index.slide);
-          });
-        }),
-      ));
-    } else {
-      onChange(deckIndex.withDeck(
-        deckIndex.deck.rebuildChunks((chunks) {
-          chunks.removeAt(deckIndex.index.chunk);
-        }),
-      ));
-    }
-  }
-
-  void splitMinorChunk(
-    DeckIndex deckIndex, {
-    required TextSelection selection,
-  }) {
-    final chunk = deckIndex.chunk as BodyChunk;
-
-    onChange(DeckIndex(
-      deck: deckIndex.deck.rebuildChunks((chunks) {
-        chunks[deckIndex.index.chunk] = chunk.rebuildMinorChunks(
-          (minorChunksBuilder) {
-            minorChunksBuilder.replaceRange(
-              deckIndex.index.slide,
-              deckIndex.index.slide + 1,
-              [
-                chunk.minorChunks[deckIndex.index.slide]
-                    .substring(0, selection.baseOffset)
-                    .trim(),
-                chunk.minorChunks[deckIndex.index.slide]
-                    .substring(selection.baseOffset)
-                    .trim(),
-              ],
-            );
-          },
-        );
-      }),
-      index: Index(
-        chunk: deckIndex.index.chunk,
-        slide: deckIndex.index.slide + 1,
-      ),
-    ));
-  }
-
-  void splitMajorChunk(
-    DeckIndex deckIndex, {
-    required TextSelection selection,
-  }) {
-    final chunk = deckIndex.chunk as BodyChunk;
-
-    onChange(DeckIndex(
-      deck: deckIndex.deck.rebuildChunks(
-        (chunks) {
-          chunks.replaceRange(
-            deckIndex.index.chunk,
-            deckIndex.index.chunk + 1,
-            [
+  void splitMajorChunk() {
+    deckIndexController.chunkControllers = deckIndexController.chunkControllers
+        .expand<_ChunkEditingController>((chunkControllerWrapper) {
+      final chunkController = chunkControllerWrapper.controller;
+      if (chunkController is _BodyChunkEditingController) {
+        final minorChunkIndex = chunkController.minorChunkControllers
+            .indexWhere((minorChunkController) =>
+                minorChunkController.focusNode.hasFocus);
+        if (minorChunkIndex >= 0) {
+          final minorChunks = chunkController.chunk.minorChunks;
+          final selection = chunkController
+              .minorChunkControllers[minorChunkIndex].controller.selection;
+          chunkController.dispose();
+          return [
+            _ChunkEditingController(
               BodyChunk(
-                minorChunks:
-                    chunk.minorChunks.sublist(0, deckIndex.index.slide).rebuild(
+                minorChunks: minorChunks.sublist(0, minorChunkIndex).rebuild(
                   (builder) {
                     if (selection.baseOffset > 0) {
-                      builder.add(chunk.minorChunks[deckIndex.index.slide]
+                      builder.add(minorChunks[minorChunkIndex]
                           .substring(0, selection.baseOffset)
                           .trim());
                     }
                   },
                 ),
               ),
+            ),
+            _ChunkEditingController(
               BodyChunk(
-                minorChunks: chunk.minorChunks
-                    .sublist(deckIndex.index.slide + 1)
-                    .rebuild(
+                minorChunks: minorChunks.sublist(minorChunkIndex + 1).rebuild(
                   (builder) {
                     builder.insert(
                       0,
-                      chunk.minorChunks[deckIndex.index.slide]
+                      minorChunks[minorChunkIndex]
                           .substring(selection.baseOffset)
                           .trim(),
                     );
                   },
                 ),
               ),
-            ],
-          );
-        },
-      ),
-      index: Index(chunk: deckIndex.index.chunk + 1, slide: 0),
-    ));
+            )..focusNodes.elementAt(0).requestFocus(),
+          ];
+        } else {
+          return [chunkControllerWrapper];
+        }
+      } else {
+        return [chunkControllerWrapper];
+      }
+    }).toList();
   }
 
-  void mergeWithPrevious(DeckIndex deckIndex) {
-    final chunk = deckIndex.chunk as BodyChunk;
+  void mergeWithPrevious() {
+    final index = deckIndexController.index;
 
-    if (deckIndex.index.slide == 0) {
-      if (deckIndex.index.chunk != 0) {
-        final previousChunk = deckIndex.deck.chunks[deckIndex.index.chunk - 1];
-        if (previousChunk is BodyChunk) {
-          onChange(DeckIndex(
-            deck: deckIndex.deck.rebuildChunks(
-              (chunks) {
-                chunks.replaceRange(
-                  deckIndex.index.chunk - 1,
-                  deckIndex.index.chunk + 1,
-                  [
-                    BodyChunk(
-                      minorChunks:
-                          previousChunk.minorChunks + chunk.minorChunks,
-                    ),
-                  ],
-                );
-              },
-            ),
-            index: Index(
-              chunk: deckIndex.index.chunk - 1,
-              slide: previousChunk.minorChunks.length,
-            ),
-          ));
+    final chunkController =
+        deckIndexController.chunkControllers[index.chunk].controller;
+
+    if (chunkController is _BodyChunkEditingController) {
+      if (index.slide == 0) {
+        if (index.chunk > 0) {
+          final previousChunkController =
+              deckIndexController.chunkControllers[index.chunk - 1].controller;
+          if (previousChunkController is _BodyChunkEditingController) {
+            final minorChunks = previousChunkController.chunk.minorChunks +
+                chunkController.chunk.minorChunks;
+            final focusIndex =
+                previousChunkController.minorChunkControllers.length - 1;
+
+            previousChunkController.dispose();
+            chunkController.dispose();
+
+            deckIndexController.chunkControllers.replaceRange(
+              index.chunk - 1,
+              index.chunk + 1,
+              [
+                _ChunkEditingController(BodyChunk(
+                  minorChunks: minorChunks,
+                ))
+                  ..focusNodes.elementAt(focusIndex),
+              ],
+            );
+          }
         }
+      } else {
+        final minorChunkController =
+            chunkController.minorChunkControllers[index.slide];
+        final previousMinorChunkController =
+            chunkController.minorChunkControllers[index.slide - 1];
+
+        final text = '${previousMinorChunkController.controller.text}\n'
+            '${minorChunkController.controller.text}';
+
+        minorChunkController.controller.dispose();
+        minorChunkController.focusNode.dispose();
+        previousMinorChunkController.controller.dispose();
+        previousMinorChunkController.focusNode.dispose();
+
+        chunkController.minorChunkControllers
+            .replaceRange(index.slide - 1, index.slide + 1, [
+          (
+            controller: TextEditingController(text: text),
+            focusNode: FocusNode()..requestFocus()
+          )
+        ]);
       }
-    } else {
-      onChange(DeckIndex(
-        deck: deckIndex.deck.rebuildChunks((chunks) {
-          chunks[deckIndex.index.chunk] = chunk.rebuildMinorChunks(
-            (minorChunksBuilder) {
-              minorChunksBuilder.replaceRange(
-                deckIndex.index.slide - 1,
-                deckIndex.index.slide + 1,
-                [
-                  '${chunk.minorChunks[deckIndex.index.slide - 1]}\n'
-                      '${chunk.minorChunks[deckIndex.index.slide]}',
-                ],
-              );
-            },
-          );
-        }),
-        index: Index(
-          chunk: deckIndex.index.chunk,
-          slide: deckIndex.index.slide - 1,
-        ),
-      ));
     }
   }
 
-  void mergeWithNext(DeckIndex deckIndex) {
-    final chunk = deckIndex.chunk as BodyChunk;
+  void mergeWithNext() {
+    final index = deckIndexController.index;
 
-    if (deckIndex.index.slide == chunk.minorChunks.length - 1) {
-      if (deckIndex.index.chunk != deckIndex.deck.chunks.length - 1) {
-        final nextChunk = deckIndex.deck.chunks[deckIndex.index.chunk + 1];
-        if (nextChunk is BodyChunk) {
-          onChange(deckIndex.withDeck(
-            deckIndex.deck.rebuildChunks((chunks) {
-              chunks.replaceRange(
-                deckIndex.index.chunk,
-                deckIndex.index.chunk + 2,
-                [
-                  BodyChunk(
-                    minorChunks: chunk.minorChunks + nextChunk.minorChunks,
-                  ),
-                ],
-              );
-            }),
-          ));
+    final chunkController =
+        deckIndexController.chunkControllers[index.chunk].controller;
+
+    if (chunkController is _BodyChunkEditingController) {
+      if (index.slide == chunkController.minorChunkControllers.length - 1) {
+        if (index.chunk < deckIndexController.chunkControllers.length - 1) {
+          final nextChunkController =
+              deckIndexController.chunkControllers[index.chunk + 1].controller;
+          if (nextChunkController is _BodyChunkEditingController) {
+            final minorChunks = chunkController.chunk.minorChunks +
+                nextChunkController.chunk.minorChunks;
+            final focusIndex = chunkController.minorChunkControllers.length - 1;
+
+            nextChunkController.dispose();
+            chunkController.dispose();
+
+            deckIndexController.chunkControllers.replaceRange(
+              index.chunk,
+              index.chunk + 2,
+              [
+                _ChunkEditingController(BodyChunk(
+                  minorChunks: minorChunks,
+                ))
+                  ..focusNodes.elementAt(focusIndex),
+              ],
+            );
+          }
         }
+      } else {
+        final minorChunkController =
+            chunkController.minorChunkControllers[index.slide];
+        final nextMinorChunkController =
+            chunkController.minorChunkControllers[index.slide + 1];
+
+        final text = '${minorChunkController.controller.text}\n'
+            '${nextMinorChunkController.controller.text}';
+
+        minorChunkController.controller.dispose();
+        minorChunkController.focusNode.dispose();
+        nextMinorChunkController.controller.dispose();
+        nextMinorChunkController.focusNode.dispose();
+
+        chunkController.minorChunkControllers
+            .replaceRange(index.slide, index.slide + 2, [
+          (
+            controller: TextEditingController(text: text),
+            focusNode: FocusNode()..requestFocus()
+          )
+        ]);
       }
-    } else {
-      onChange(deckIndex.withDeck(
-        deckIndex.deck.rebuildChunks((chunks) {
-          chunks[deckIndex.index.chunk] = chunk.rebuildMinorChunks(
-            (minorChunksBuilder) {
-              minorChunksBuilder.replaceRange(
-                deckIndex.index.slide,
-                deckIndex.index.slide + 2,
-                [
-                  '${chunk.minorChunks[deckIndex.index.slide]}\n'
-                      '${chunk.minorChunks[deckIndex.index.slide + 1]}',
-                ],
-              );
-            },
-          );
-        }),
-      ));
     }
   }
 }
 
 @immutable
-class _EditingMinorChunk extends _EditingSpecificChunkBody {
-  final int minorChunkIndex;
-
-  const _EditingMinorChunk({
-    required super.deckIndex,
-    required super.chunkIndex,
-    required this.minorChunkIndex,
-  });
-
-  @override
-  createState() => _EditingMinorChunkState();
-}
-
-class _EditingMinorChunkState
-    extends _EditingSpecificChunkBodyState<_EditingMinorChunk> {
-  final controller = TextEditingController();
-  final focusNode = FocusNode();
-
-  void gainFocus() {
-    select(slide: widget.minorChunkIndex);
-  }
-
-  @override
-  void processDeckIndex((DeckIndex?, UuidValue?) update) {
-    super.processDeckIndex(update);
-    final (_, source) = update;
-    if (deckIndex != null && source != uuid) {
-      final minorChunks =
-          (deckIndex!.deck.chunks[widget.chunkIndex] as BodyChunk).minorChunks;
-      if (widget.minorChunkIndex < minorChunks.length) {
-        controller.text = minorChunks[widget.minorChunkIndex];
-      }
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    focusNode.addListener(gainFocus);
-  }
-
-  @override
-  void didUpdateWidget(covariant _EditingMinorChunk oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (selected(slide: widget.minorChunkIndex)) {
-      focusNode.requestFocus();
-    }
-  }
-
-  @override
-  void dispose() {
-    focusNode.removeListener(gainFocus);
-
-    focusNode.dispose();
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (deckIndex == null) {
-      return Container();
-    } else {
-      final operations = _EditingMinorChunkOperations(
-        onChange: (newDeckIndex) =>
-            widget.deckIndex.publish((newDeckIndex, null)),
-      );
-      return CupertinoTextFormFieldRow(
-        padding: const EdgeInsets.all(2),
-        controller: controller,
-        focusNode: focusNode,
-        style: ColourPalette.of(context).bodyStyle,
-        autofocus: selected(slide: widget.minorChunkIndex),
-        maxLines: null,
-        onChanged: (text) {
-          onChangeChunk((chunk as BodyChunk).rebuildMinorChunks(
-            (minorChunksBuilder) =>
-                minorChunksBuilder[widget.minorChunkIndex] = text,
-          ));
-        },
-        cursorColor: ColourPalette.of(context).foreground,
-      ).callbackShortcuts(bindings: {
-        const SingleActivator(
-          LogicalKeyboardKey.arrowUp,
-          alt: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.moveUp(deckIndex!);
-          }
-        },
-        const SingleActivator(
-          LogicalKeyboardKey.arrowDown,
-          alt: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.moveDown(deckIndex!);
-          }
-        },
-        const SingleActivator(
-          LogicalKeyboardKey.backspace,
-          alt: true,
-          shift: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.delete(deckIndex!);
-          }
-        },
-        const SingleActivator(
-          LogicalKeyboardKey.delete,
-          alt: true,
-          shift: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.delete(deckIndex!);
-          }
-        },
-        const SingleActivator(
-          LogicalKeyboardKey.enter,
-          alt: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.splitMinorChunk(
-              deckIndex!,
-              selection: controller.selection,
-            );
-          }
-        },
-        const SingleActivator(
-          LogicalKeyboardKey.enter,
-          alt: true,
-          shift: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.splitMajorChunk(
-              deckIndex!,
-              selection: controller.selection,
-            );
-          }
-        },
-        const SingleActivator(
-          LogicalKeyboardKey.backspace,
-          alt: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.mergeWithPrevious(
-              deckIndex!,
-            );
-          }
-        },
-        const SingleActivator(
-          LogicalKeyboardKey.delete,
-          alt: true,
-        ): () {
-          if (deckIndex != null) {
-            operations.mergeWithNext(
-              deckIndex!,
-            );
-          }
-        },
-      }).background(selected(slide: widget.minorChunkIndex)
-          ? ColourPalette.of(context).secondaryActive
-          : ColourPalette.of(context).background);
-    }
-  }
-}
-
-@immutable
-class _EditingChunkBody extends StatefulWidget {
-  final PubSub<(DeckIndex?, UuidValue?)> deckIndex;
-  final int chunkIndex;
+class _EditingChunkBody extends StatelessWidget {
+  final _DeckIndexEditingController deckIndexController;
+  final _ChunkEditingController controller;
 
   const _EditingChunkBody({
-    required this.deckIndex,
-    required this.chunkIndex,
+    required this.deckIndexController,
+    required this.controller,
   });
 
   @override
-  State<StatefulWidget> createState() => _EditingChunkBodyState();
-}
-
-class _EditingChunkBodyState extends State<_EditingChunkBody> {
-  Type? chunkType;
-
-  late StreamSubscription<(DeckIndex?, UuidValue?)> deckIndexSubscription;
-
-  void processDeckIndex((DeckIndex?, UuidValue?) update) {
-    final newChunkType = update.$1?.deck.chunks[widget.chunkIndex].runtimeType;
-    if (chunkType != newChunkType) {
-      setState(() => chunkType = newChunkType);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-  }
-
-  @override
-  void didUpdateWidget(covariant _EditingChunkBody oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.deckIndex != oldWidget.deckIndex) {
-      deckIndexSubscription.cancel();
-      deckIndexSubscription = widget.deckIndex.subscribe(processDeckIndex);
-    }
-  }
-
-  @override
-  void dispose() {
-    deckIndexSubscription.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (chunkType == CountdownChunk) {
+    final controller = this.controller.controller;
+    if (controller is _CountdownChunkEditingController) {
       return _EditingCountdownChunkBody(
-        deckIndex: widget.deckIndex,
-        chunkIndex: widget.chunkIndex,
+        controller: controller,
       );
-    } else if (chunkType == TitleChunk) {
+    } else if (controller is _TitleChunkEditingController) {
       return _EditingTitleChunkBody(
-        deckIndex: widget.deckIndex,
-        chunkIndex: widget.chunkIndex,
+        controller: controller,
       );
-    } else if (chunkType == BodyChunk) {
+    } else if (controller is _BodyChunkEditingController) {
       return _EditingBodyChunkBody(
-        deckIndex: widget.deckIndex,
-        chunkIndex: widget.chunkIndex,
+        deckIndexController: deckIndexController,
+        controller: controller,
       );
     } else {
       return const Text('Unknown chunk type');
@@ -923,6 +822,7 @@ class _EditingChunkSpecificButtons extends StatelessWidget {
       return PackedButtonRow(
         buttons: [
           PackedButton(
+            debugLabel: 'Add Minor Chunk',
             child:
                 const Icon(CupertinoIcons.add).padding(const EdgeInsets.all(1)),
             colour: ColourPalette.of(context).active,
@@ -943,81 +843,60 @@ class _EditingChunkSpecificButtons extends StatelessWidget {
 }
 
 class _EditingChunk extends StatelessWidget {
-  final PubSub<(DeckIndex?, UuidValue?)> deckIndex;
   final int chunkIndex;
+  final void Function() onDeleteChunk;
+  final _DeckIndexEditingController deckIndexController;
+  final _ChunkEditingController controller;
 
   const _EditingChunk({
     super.key,
-    required this.deckIndex,
     required this.chunkIndex,
+    required this.onDeleteChunk,
+    required this.deckIndexController,
+    required this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      PubSubBuilder(
-          pubSub: deckIndex,
-          builder: (context, update) {
-            final deckIndex = update?.$1;
-            if (deckIndex == null) {
-              return Container();
-            } else {
-              final chunk = deckIndex.deck.chunks[chunkIndex];
-              onChangeChunk(chunk) => this.deckIndex.publish((
-                    deckIndex.withDeck(
-                      deckIndex.deck.rebuildChunks(
-                        (chunksBuilder) => chunksBuilder[chunkIndex] = chunk,
-                      ),
-                    ),
-                    null,
-                  ));
-              return Row(children: [
-                _ChunkTypeRadio(
-                  chunk: chunk,
-                  onChangeChunk: onChangeChunk,
-                ),
-                const Spacer(),
-                _EditingChunkSpecificButtons(
-                  chunk: chunk,
-                  onChangeChunk: (chunk) => onChangeChunk(chunk),
-                ),
-                PackedButtonRow(
-                  buttons: [
-                    PackedButton(
-                      child: const Icon(CupertinoIcons.delete_solid)
-                          .padding(const EdgeInsets.all(1)),
-                      colour: ColourPalette.of(context).danger,
-                      filledChildColour:
-                          ColourPalette.of(context).secondaryBackground,
-                      onTap: () => this.deckIndex.publish((
-                        deckIndex.withDeck(
-                          deckIndex.deck.rebuildChunks(
-                            (chunks) => chunks.removeAt(chunkIndex),
-                          ),
-                        ),
-                        null,
-                      )),
-                    ),
-                    PackedButton(
-                      child: const Icon(CupertinoIcons.arrow_up_arrow_down)
-                          .padding(const EdgeInsets.all(1)),
-                      colour: ColourPalette.of(context).active,
-                      filledChildColour:
-                          ColourPalette.of(context).secondaryBackground,
-                      wrapper: (child) => ReorderableDragStartListener(
-                        index: chunkIndex,
-                        child: child,
-                      ),
-                    ),
-                  ].toBuiltList(),
-                  padding: const EdgeInsets.all(1),
-                ).padding_(const EdgeInsets.all(4)),
-              ]).background(ColourPalette.of(context).secondaryBackground);
-            }
-          }),
+      Row(children: [
+        _ChunkTypeRadio(
+          chunk: controller.chunk,
+          onChangeChunk: (chunk) => controller.chunk = chunk,
+        ),
+        const Spacer(),
+        _EditingChunkSpecificButtons(
+          chunk: controller.chunk,
+          onChangeChunk: (chunk) => controller.chunk = chunk,
+        ),
+        PackedButtonRow(
+          buttons: [
+            PackedButton(
+              debugLabel: 'Delete Major Chunk',
+              child: const Icon(CupertinoIcons.delete_solid)
+                  .padding(const EdgeInsets.all(1)),
+              colour: ColourPalette.of(context).danger,
+              filledChildColour: ColourPalette.of(context).secondaryBackground,
+              onTap: onDeleteChunk,
+            ),
+            PackedButton(
+              debugLabel: 'Reorder Major Chunk',
+              child: const Icon(CupertinoIcons.arrow_up_arrow_down)
+                  .padding(const EdgeInsets.all(1)),
+              colour: ColourPalette.of(context).active,
+              filledChildColour: ColourPalette.of(context).secondaryBackground,
+              wrapper: (child) => ReorderableDragStartListener(
+                index: chunkIndex,
+                child: child,
+              ),
+            ),
+          ].toBuiltList(),
+          padding: const EdgeInsets.all(1),
+        ).padding_(const EdgeInsets.all(4)),
+      ]).background(ColourPalette.of(context).secondaryBackground),
       _EditingChunkBody(
-        deckIndex: deckIndex,
-        chunkIndex: chunkIndex,
+        deckIndexController: deckIndexController,
+        controller: controller,
       ),
     ]);
   }
@@ -1037,19 +916,33 @@ class EditingDeckPanel extends StatefulWidget {
 }
 
 class _EditingDeckPanelState extends State<EditingDeckPanel> {
-  DeckIndex? nonStateDeckIndex;
+  final uuid = const Uuid().v4obj();
 
-  int chunkCount = 0;
+  _DeckIndexEditingController? controller;
 
   late StreamSubscription<(DeckIndex?, UuidValue?)> _deckIndexSubscription;
 
   void updateDeckIndex((DeckIndex?, UuidValue?) event) {
-    final (newDeckIndex, _) = event;
-    nonStateDeckIndex = newDeckIndex;
+    final (deckIndex, source) = event;
+    print("Update coming in, refresh is ${source != uuid}");
 
-    final newChunkCount = newDeckIndex?.deck.chunks.length ?? 0;
-    if (chunkCount != newChunkCount) {
-      setState(() => chunkCount = newChunkCount);
+    if (source != uuid) {
+      setState(() {
+        if (deckIndex == null) {
+          controller?.dispose();
+          controller = null;
+        } else {
+          if (controller == null) {
+            controller = _DeckIndexEditingController(deckIndex)
+              ..addListener(() {
+                widget.deckIndex.publish((controller?.deckIndex, uuid));
+                setState(() {});
+              });
+          } else {
+            controller!.deckIndex = deckIndex;
+          }
+        }
+      });
     }
   }
 
@@ -1064,6 +957,8 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
     super.didUpdateWidget(oldWidget);
     if (widget.deckIndex != oldWidget.deckIndex) {
       _deckIndexSubscription.cancel();
+      controller?.dispose();
+      controller = null;
       _deckIndexSubscription = widget.deckIndex.subscribe(updateDeckIndex);
     }
   }
@@ -1071,79 +966,70 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
   @override
   void dispose() {
     _deckIndexSubscription.cancel();
+    controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      Row(children: [
-        _CommentField(deckIndex: widget.deckIndex).expanded(),
-        PubSubBuilder(
-            pubSub: widget.deckIndex,
-            builder: (context, update) {
-              final deckIndex = update?.$1;
-              if (deckIndex == null) {
-                return Container();
-              } else {
-                return PackedButtonRow(
-                  buttons: [
-                    PackedButton(
-                      child: const Icon(CupertinoIcons.add)
-                          .padding(const EdgeInsets.all(4)),
-                      colour: ColourPalette.of(context).active,
-                      filledChildColour:
-                          ColourPalette.of(context).secondaryBackground,
-                      onTap: () => widget.deckIndex.publish(
-                        (
-                          deckIndex.withDeck(
-                            deckIndex.deck.rebuildChunks(
-                              (chunksBuilder) {
-                                chunksBuilder.insert(
-                                  min(deckIndex.index.chunk + 1,
-                                      chunksBuilder.length),
-                                  BodyChunk(minorChunks: [''].toBuiltList()),
-                                );
-                              },
-                            ),
-                          ),
-                          null
-                        ),
-                      ),
-                    )
-                  ].toBuiltList(),
-                );
-              }
-            }),
-      ]).padding(const EdgeInsets.all(16)),
-      ReorderableList(
-        itemBuilder: (context, index) {
-          return _EditingChunk(
-            key: UniqueKey(),
-            deckIndex: widget.deckIndex,
-            chunkIndex: index,
-          );
-        },
-        itemCount: chunkCount,
-        onReorder: (oldIndex, newIndex) {
-          if (oldIndex < newIndex) {
-            // removing the item at oldIndex will shorten the list by 1.
-            newIndex -= 1;
-          }
-          final deckIndex = nonStateDeckIndex;
-          if (deckIndex != null) {
-            widget.deckIndex.publish((
-              deckIndex.withDeck(
-                deckIndex.deck.rebuildChunks((chunks) {
-                  final chunk = chunks.removeAt(oldIndex);
-                  chunks.insert(newIndex, chunk);
-                }),
-              ),
-              null,
-            ));
-          }
-        },
-      ).expanded(),
-    ]).background(ColourPalette.of(context).secondaryBackground);
+    final controller = this.controller;
+    if (controller == null) {
+      return Container();
+    } else {
+      return FocusTraversalGroup(
+        child: Column(children: [
+          Row(children: [
+            _CommentField(controller: controller).expanded(),
+            PackedButtonRow(
+              buttons: [
+                PackedButton(
+                  debugLabel: 'Add Major Chunk',
+                  child: const Icon(CupertinoIcons.add)
+                      .padding(const EdgeInsets.all(4)),
+                  colour: ColourPalette.of(context).active,
+                  filledChildColour:
+                      ColourPalette.of(context).secondaryBackground,
+                  onTap: () =>
+                      setState(() => controller.chunkControllers.insert(
+                            controller.chunkControllers.indexWhere(
+                                (chunkController) => chunkController.focusNodes
+                                    .any((focusNode) => focusNode.hasFocus)),
+                            _ChunkEditingController(
+                                BodyChunk(minorChunks: [''].toBuiltList())),
+                          )),
+                )
+              ].toBuiltList(),
+            ),
+          ]).padding(const EdgeInsets.all(16)),
+          ReorderableList(
+            itemBuilder: (context, index) {
+              return _EditingChunk(
+                key: ValueKey(index),
+                chunkIndex: index,
+                onDeleteChunk: () {
+                  setState(() {
+                    controller.chunkControllers.removeAt(index).dispose();
+                  });
+                },
+                deckIndexController: controller,
+                controller: controller.chunkControllers[index],
+              );
+            },
+            itemCount: controller.chunkControllers.length,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  // removing the item at oldIndex will shorten the list by 1.
+                  newIndex -= 1;
+                }
+                final chunkController =
+                    controller.chunkControllers.removeAt(oldIndex);
+                controller.chunkControllers.insert(newIndex, chunkController);
+              });
+            },
+          ).expanded(),
+        ]).background(ColourPalette.of(context).secondaryBackground),
+      );
+    }
   }
 }

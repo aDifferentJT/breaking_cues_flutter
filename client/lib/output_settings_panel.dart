@@ -67,6 +67,7 @@ class _OutputSettingsPanelState extends State<OutputSettingsPanel> {
             PackedButtonRow(
               buttons: [
                 PackedButton(
+                  debugLabel: "New Output",
                   child: const Icon(CupertinoIcons.add)
                       .padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,

@@ -5,6 +5,7 @@ import 'package:core/streams.dart';
 import 'package:flutter/material.dart';
 
 import 'package:core/deck.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
 
 import 'colours.dart';
@@ -36,16 +37,27 @@ class DeckPanel extends StatelessWidget {
                     (slideIndex, slide) {
                       final index = Index(chunk: chunkIndex, slide: slideIndex);
                       return [
-                        Text(slide.label)
-                            .container(
-                              padding: const EdgeInsets.all(8),
+                        Builder(
+                          builder: (context) => Text(slide.label).container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
                               color:
                                   Index(chunk: chunkIndex, slide: slideIndex) ==
                                           deckIndex.index
                                       ? ColourPalette.of(context).active
                                       : ColourPalette.of(context).background,
-                            )
-                            .gestureDetector(onTap: () => select(index)),
+                              boxShadow: Focus.of(context).hasPrimaryFocus
+                                  ? [ColourPalette.of(context).focusedShadow()]
+                                  : null,
+                            ),
+                          ),
+                        )
+                            .focus()
+                            .gestureDetector(onTap: () => select(index))
+                            .callbackShortcuts(bindings: {
+                          const SingleActivator(LogicalKeyboardKey.space): () =>
+                              select(index),
+                        }),
                         Divider(
                           color: ColourPalette.of(context).secondaryBackground,
                           height: 0,

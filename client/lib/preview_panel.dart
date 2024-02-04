@@ -248,6 +248,7 @@ class PreviewPanelState extends State<PreviewPanel>
                       keepHiddenChildrenAlive: false,
                       children: [
                         TabEntry(
+                          debugLabel: "Preview",
                           icon: const Text("Preview").rotated(quarterTurns: 1),
                           body: PreviewDeckPanelPubSub(
                             update: widget.update,
@@ -256,12 +257,14 @@ class PreviewPanelState extends State<PreviewPanel>
                           ),
                         ),
                         TabEntry(
+                          debugLabel: "Editor",
                           icon: const Text("Editor").rotated(quarterTurns: 1),
                           body: EditingDeckPanel(
                             deckIndex: preview,
                           ),
                         ),
                         TabEntry(
+                          debugLabel: "Fetch",
                           icon: const Text("Fetch").rotated(quarterTurns: 1),
                           body: FetchPanel(
                             updateChunks: (chunks) => updateDeck(
@@ -271,6 +274,7 @@ class PreviewPanelState extends State<PreviewPanel>
                           ),
                         ),
                         TabEntry(
+                          debugLabel: "Deck Settings",
                           icon: const Text("Settings").rotated(quarterTurns: 1),
                           body: Column(children: [
                             Text(

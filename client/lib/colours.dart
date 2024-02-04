@@ -45,6 +45,12 @@ class ColourPalette {
   TextStyle get headingStyle => TextStyle(color: foreground, fontSize: 24);
   TextStyle get bodyStyle => TextStyle(color: foreground, fontSize: 14);
 
+  BoxShadow focusedShadow({Color? colour}) => BoxShadow(
+        color: colour ?? active,
+        blurRadius: 15,
+        blurStyle: BlurStyle.outer,
+      );
+
   @override
   bool operator ==(Object other) =>
       other is ColourPalette &&

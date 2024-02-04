@@ -133,22 +133,26 @@ class _BibleFetchPanelState extends State<_BibleFetchPanel> {
               setter: (psalmParams) => psalmParams.withFraming,
               options: [
                 BCRadioOption(
+                  debugLabel: 'No Framing',
                   value: BibleFraming.none,
                   child: const Text('None').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
+                  debugLabel: 'Standard Framing',
                   value: BibleFraming.standard,
                   child:
                       const Text('Standard').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
+                  debugLabel: 'Gospel Framing',
                   value: BibleFraming.gospel,
                   child: const Text('Gospel').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
+                  debugLabel: 'Lent Gospel Framing',
                   value: BibleFraming.lentGospel,
                   child: const Text('Lent Gospel')
                       .padding(const EdgeInsets.all(4)),
@@ -206,11 +210,13 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
               setter: (psalmParams) => psalmParams.withPsalter,
               options: [
                 BCRadioOption(
+                  debugLabel: 'BCP',
                   value: Psalter.bcp,
                   child: const Text('BCP').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
+                  debugLabel: 'CW',
                   value: Psalter.cw,
                   child: const Text('CW').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
@@ -260,16 +266,19 @@ class _PsalmFetchPanelState extends State<_PsalmFetchPanel> {
               setter: (psalmParams) => psalmParams.withBold,
               options: [
                 BCRadioOption(
+                  debugLabel: 'No Bold',
                   value: PsalmBold.none,
                   child: const Text('None').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
+                  debugLabel: 'Odd Bold',
                   value: PsalmBold.oddVerses,
                   child: const Text('Odd').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
+                  debugLabel: '2nd Half Bold',
                   value: PsalmBold.secondHalf,
                   child:
                       const Text('2nd Half').padding(const EdgeInsets.all(4)),
@@ -327,11 +336,13 @@ class _HymnFetchPanelState extends State<_HymnFetchPanel> {
               setter: (hymnParams) => hymnParams.withHymnal,
               options: [
                 BCRadioOption(
+                  debugLabel: 'NEH',
                   value: Hymnal.neh,
                   child: const Text('NEH').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
                 ),
                 BCRadioOption(
+                  debugLabel: 'A&M',
                   value: Hymnal.am,
                   child: const Text('A&M').padding(const EdgeInsets.all(4)),
                   colour: ColourPalette.of(context).active,
@@ -372,14 +383,17 @@ class FetchPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return LeftTabs(keepHiddenChildrenAlive: true, children: [
       TabEntry(
+        debugLabel: 'Fetch Bible',
         icon: const Text("Bible").rotated(quarterTurns: 1),
         body: _BibleFetchPanel(updateChunks: updateChunks),
       ),
       TabEntry(
+        debugLabel: 'Fetch Psalm',
         icon: const Text("Psalm").rotated(quarterTurns: 1),
         body: _PsalmFetchPanel(updateChunks: updateChunks),
       ),
       TabEntry(
+        debugLabel: 'Fetch Hymn',
         icon: const Text("Hymn").rotated(quarterTurns: 1),
         body: _HymnFetchPanel(updateChunks: updateChunks),
       ),

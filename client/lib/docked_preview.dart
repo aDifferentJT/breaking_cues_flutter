@@ -76,6 +76,7 @@ class _DockedPreviewState extends State<DockedPreview> {
           keepHiddenChildrenAlive: true,
           children: widget.defaultSettings.keys
               .map((name) => TabEntry(
+                    debugLabel: name,
                     icon: Text(name).rotated(quarterTurns: 1),
                     body: Stack(children: [
                       Container(color: Colors.blueGrey).positioned(
@@ -91,7 +92,7 @@ class _DockedPreviewState extends State<DockedPreview> {
                     ]).centered(),
                   ))
               .toList(growable: false),
-        ).expanded(),
+        ).excludeFocus(excluding: height < 0.001).expanded(),
       ]).background(ColourPalette.of(context).secondaryBackground).constrained(
             BoxConstraints(
               maxHeight: height + handleHeight,
