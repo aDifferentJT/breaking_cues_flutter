@@ -96,8 +96,8 @@ class PreviewDeckPanelPubSub extends StatefulWidget {
 }
 
 class PreviewDeckPanelPubSubState extends State<PreviewDeckPanelPubSub> {
-  late final CachedPubSub<Update> cachedUpdate;
-  late final CachedPubSub<DeckKeyIndex?> cachedPreview;
+  late CachedPubSub<Update> cachedUpdate;
+  late CachedPubSub<DeckKeyIndex?> cachedPreview;
 
   DeckIndex? get deckIndex => cachedPreview.value == null
       ? null
