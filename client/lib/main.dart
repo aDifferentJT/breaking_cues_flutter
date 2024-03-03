@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:core/pubsub.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-
 import 'package:core/deck.dart';
+import 'package:core/media_library.dart';
+import 'package:core/pubsub.dart';
 import 'package:core/server.dart';
 import 'package:core/streams.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_utils/widget_modifiers.dart';
+import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:uuid/uuid.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:shelf/shelf.dart';
 
@@ -61,16 +62,37 @@ class _ClientAppState extends State<ClientApp>
 
   var programme =
       Programme.new_(); // Only used for saving, setState not required
-  StreamSubscription<Update>? updateStreamSubscription;
 
-  void subscribeToUpdateStream() {
-    updateStreamSubscription?.cancel();
-    updateStreamSubscription = pubSubs.update.subscribe(
-      (update) => programme = update.programme,
-    );
-  }
+  final mediaLibrary = MediaLibrary();
 
   String serverAddress = "ws://127.0.0.1:8080";
+
+  StreamSubscription<Update>? updateStreamSubscription;
+  void subscribeToUpdateStream() {
+    updateStreamSubscription?.cancel();
+    updateStreamSubscription = pubSubs.update.subscribe((update) {
+      programme = update.programme;
+
+      Future.wait(programme.mediaUuids.map((uuid) {
+        if (mediaLibrary[uuid] != null) {
+          return Future.value();
+        } else {
+          final uri =
+              Uri.tryParse('$serverAddress/media?uuid=${uuid.toString()}');
+          if (uri == null) {
+            return Future.value();
+          } else {
+            return http
+                .get(uri)
+                .then((response) => response.bodyBytes)
+                .then(Media.fromBytes)
+                .then(mediaLibrary.insert);
+          }
+        }
+      }));
+    });
+  }
+
   StreamSubscription<void>? onConnect;
   WebsocketClientStreams? remoteStreams;
 

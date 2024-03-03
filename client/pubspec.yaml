@@ -48,6 +48,7 @@ dependencies:
   shelf: ^1.4.1
   mime: ^1.0.4
   uuid: ^4.3.3
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

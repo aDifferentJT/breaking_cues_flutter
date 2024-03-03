@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
@@ -968,7 +969,10 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
                   filledChildColour:
                       ColourPalette.of(context).secondaryBackground,
                   onTap: () => setState(() => controller.insertChunkAt(
-                        controller.index.chunk + 1,
+                        min(
+                          controller.index.chunk + 1,
+                          controller.chunkControllers.length,
+                        ),
                         BodyChunk(minorChunks: [''].toBuiltList()),
                       )),
                 )
@@ -983,6 +987,7 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
                 onDeleteChunk: () {
                   setState(() {
                     controller.chunkControllers.removeAt(index).dispose();
+                    controller.notifyListeners();
                   });
                 },
                 deckIndexController: controller,
@@ -999,6 +1004,7 @@ class _EditingDeckPanelState extends State<EditingDeckPanel> {
                 final chunkController =
                     controller.chunkControllers.removeAt(oldIndex);
                 controller.chunkControllers.insert(newIndex, chunkController);
+                controller.notifyListeners();
               });
             },
           ).expanded(),

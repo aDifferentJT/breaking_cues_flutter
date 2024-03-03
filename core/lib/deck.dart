@@ -1,6 +1,7 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
+import 'package:uuid/uuid.dart';
 
 @immutable
 class Colour {
@@ -789,8 +790,13 @@ class DeckKeyIndex {
 class Programme {
   final BuiltMap<String, DisplaySettings> defaultSettings;
   final BuiltList<Deck> decks;
+  final BuiltList<UuidValue> mediaUuids;
 
-  const Programme({required this.defaultSettings, required this.decks});
+  const Programme({
+    required this.defaultSettings,
+    required this.decks,
+    required this.mediaUuids,
+  });
 
   Programme.new_()
       : defaultSettings = BuiltMap(const {
@@ -827,7 +833,8 @@ class Programme {
                 BodyChunk(minorChunks: BuiltList(['Slide 1', 'Slide 2'])),
                 BodyChunk(minorChunks: BuiltList(['Slide 1\nSlide 2'])),
               ])),
-        ]);
+        ]),
+        mediaUuids = BuiltList();
 
   Programme.fromJson(Map<String, dynamic> json)
       : defaultSettings = BuiltMap.of(
@@ -838,23 +845,40 @@ class Programme {
         decks = (json['decks'] as Iterable)
             .cast<Map<String, dynamic>>()
             .map(Deck.fromJson)
-            .toBuiltList();
+            .toBuiltList(),
+        mediaUuids = (json['mediaUuids'] as Iterable?)
+                ?.cast<String>()
+                .map(UuidValue.raw)
+                .toBuiltList() ??
+            BuiltList();
 
   Map<String, dynamic> toJson() => {
         'defaultSettings': defaultSettings
             .asMap()
             .map((key, value) => MapEntry(key, value.toJson())),
         'decks': decks.map((deck) => deck.toJson()).toList(growable: false),
+        'mediaUuids':
+            mediaUuids.map((uuid) => uuid.toString()).toList(growable: false),
       };
 
-  Programme withDecks(BuiltList<Deck> decks) =>
-      Programme(defaultSettings: defaultSettings, decks: decks);
-  Programme mapDecks(BuiltList<Deck> Function(BuiltList<Deck>) f) =>
-      Programme(defaultSettings: defaultSettings, decks: f(decks));
+  Programme withDecks(BuiltList<Deck> decks) => Programme(
+        defaultSettings: defaultSettings,
+        decks: decks,
+        mediaUuids: mediaUuids,
+      );
+  Programme mapDecks(BuiltList<Deck> Function(BuiltList<Deck>) f) => Programme(
+        defaultSettings: defaultSettings,
+        decks: f(decks),
+        mediaUuids: mediaUuids,
+      );
 
   Programme withDefaultSettings(
           BuiltMap<String, DisplaySettings> defaultSettings) =>
-      Programme(defaultSettings: defaultSettings, decks: decks);
+      Programme(
+        defaultSettings: defaultSettings,
+        decks: decks,
+        mediaUuids: mediaUuids,
+      );
 
   Deck? deckForKey(DeckKey key) => decks.cast<Deck?>().firstWhere(
         (deck) => deck?.key == key,
